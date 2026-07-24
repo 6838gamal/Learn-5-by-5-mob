@@ -27,7 +27,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "flutter run -d web-server --web-port=5000 --web-hostname=0.0.0.0 --dart-define=GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID"
+args = "sed -i \"s|GOOGLE_CLIENT_ID_PLACEHOLDER|$GOOGLE_WEB_CLIENT_ID|g\" web/index.html && flutter run -d web-server --web-port=5000 --web-hostname=0.0.0.0 --dart-define=GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID"
 waitForPort = 5000
 
 [[ports]]

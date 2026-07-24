@@ -59,20 +59,36 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> loginWithGoogle() async {
     state = state.copyWith(isLoading: true, error: null);
     try {
-      // Trigger the Google sign-in flow
+      // Sign out any previous session first to force account chooser
+      await _googleSignIn.signOut();
+
       final googleUser = await _googleSignIn.signIn();
       if (googleUser == null) {
-        // User cancelled
+        // User cancelled the picker
         state = state.copyWith(isLoading: false);
         return;
       }
 
       final googleAuth = await googleUser.authentication;
-      final idToken = googleAuth.idToken;
-      if (idToken == null) throw Exception('Google sign-in failed: no ID token');
+      final idToken    = googleAuth.idToken;
+      final accessToken = googleAuth.accessToken;
 
-      // Exchange the Google ID token for app tokens via backend
-      final res = await _dio.post('/auth/google', data: {'id_token': idToken});
+      // On web, prefer idToken; fall back to accessToken
+      final token = idToken ?? accessToken;
+      if (token == null) {
+        throw Exception(
+          'Google authentication did not return a token. '
+          'Make sure the Web Client ID is correctly configured in Google Cloud Console.',
+        );
+      }
+
+      // Exchange the token for app JWT tokens via the backend
+      final res = await _dio.post(
+        '/auth/google',
+        data: idToken != null
+            ? {'id_token': idToken}
+            : {'access_token': accessToken},
+      );
       final data = res.data['data'] as Map<String, dynamic>;
       await AuthStorage.saveTokens(
         accessToken: data['access_token'] as String,
