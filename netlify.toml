@@ -3,8 +3,6 @@
   base    = "."
   publish = "build/web"
 
-[build.environment]
-  FLUTTER_VERSION = "3.22.0"
 
 [[redirects]]
   from   = "/*"
