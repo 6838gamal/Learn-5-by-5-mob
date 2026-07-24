@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Subscription Plans{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+  <h2 class="text-2xl font-bold text-gray-800">Subscription Plans</h2>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+  {% for plan in plans %}
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <div class="flex items-center justify-between mb-2">
+      <h3 class="text-lg font-bold text-gray-800">{{ plan.name }}</h3>
+      {% if not plan.is_active %}<span class="text-xs text-red-500">Inactive</span>{% endif %}
+    </div>
+    <p class="text-3xl font-bold text-indigo-600 mb-1">
+      ${{ "%.2f"|format(plan.price_usd) }}
+      {% if plan.billing_period %}<span class="text-sm font-normal text-gray-400">/{{ plan.billing_period }}</span>{% endif %}
+    </p>
+    <p class="text-xs text-gray-500 mb-4">Slug: <code>{{ plan.slug }}</code></p>
+    <ul class="text-sm text-gray-600 space-y-1">
+      <li>AI chat limit: {{ plan.ai_chat_limit or "Unlimited" }}</li>
+      <li>Lesson limit: {{ plan.lesson_limit or "Unlimited" }}</li>
+    </ul>
+  </div>
+  {% else %}
+  <div class="col-span-3 text-center text-gray-400 py-12">No plans configured.</div>
+  {% endfor %}
+</div>
+{% endblock %}

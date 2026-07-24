@@ -1,0 +1,1 @@
+- [Learn 5 by 5 project spec](learn5by5-spec.md) — full product spec in Arabic; architecture doc + scaffold written; see docs/ and backend/
