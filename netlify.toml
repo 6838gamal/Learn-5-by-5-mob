@@ -2,6 +2,7 @@
   command = "flutter build web"
   base    = "."
   publish = "build/web"
+  environment = { SECRETS_SCAN_ENABLED = "false" }
 
 
 [[redirects]]
