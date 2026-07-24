@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import '../../core/network/auth_storage.dart';
 import '../../core/network/dio_client.dart';
+
+final _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
 
 class AuthUser {
   final String id;
@@ -46,6 +49,36 @@ class AuthNotifier extends StateNotifier<AuthState> {
       final res = await _dio.get('/auth/me');
       state = state.copyWith(user: AuthUser.fromJson(res.data['data'] as Map<String, dynamic>));
     } catch (_) {}
+  }
+
+  Future<void> loginWithGoogle() async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      // Trigger the Google sign-in flow
+      final googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        // User cancelled
+        state = state.copyWith(isLoading: false);
+        return;
+      }
+
+      final googleAuth = await googleUser.authentication;
+      final idToken = googleAuth.idToken;
+      if (idToken == null) throw Exception('Google sign-in failed: no ID token');
+
+      // Exchange the Google ID token for app tokens via backend
+      final res = await _dio.post('/auth/google', data: {'id_token': idToken});
+      final data = res.data['data'] as Map<String, dynamic>;
+      await AuthStorage.saveTokens(
+        accessToken: data['access_token'] as String,
+        refreshToken: data['refresh_token'] as String,
+      );
+      await _loadMe();
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: _parseError(e));
+      rethrow;
+    }
+    state = state.copyWith(isLoading: false);
   }
 
   Future<void> login({required String email, required String password}) async {

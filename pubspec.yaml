@@ -52,6 +52,9 @@ dependencies:
   connectivity_plus: ^6.0.5
   flutter_secure_storage: ^9.2.2
 
+  # Auth
+  google_sign_in: ^6.2.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -64,7 +67,7 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  generate: true   # enables localization code generation
+  generate: true
 
   assets:
     - assets/images/
