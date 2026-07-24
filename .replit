@@ -1,4 +1,4 @@
-modules = ["web", "swift-5.8", "bash"]
+modules = ["python-3.12", "web", "swift-5.8"]
 
 [nix]
 channel = "stable-25_05"
