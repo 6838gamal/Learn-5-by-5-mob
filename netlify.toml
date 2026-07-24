@@ -1,10 +1,10 @@
 [build]
-  command = "flutter build web --wasm"
+  command = "flutter build web"
   base    = "."
   publish = "build/web"
 
 [build.environment]
-  FLUTTER_VERSION = "3.24.5"
+  FLUTTER_VERSION = "3.22.0"
 
 [[redirects]]
   from   = "/*"
