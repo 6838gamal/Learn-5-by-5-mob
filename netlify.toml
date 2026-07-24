@@ -1,59 +1,9 @@
 [build]
-  command   = "flutter build web --release --web-renderer canvaskit"
-  publish   = "build/web"
+  command = "flutter build web --wasm"
+  base    = "."
+  publish = "build/web"
 
-[build.environment]
-  FLUTTER_VERSION = "3.22.0"
-
-# ─── SPA fallback ─────────────────────────────────────────────────────────────
 [[redirects]]
   from   = "/*"
   to     = "/index.html"
   status = 200
-
-# ─── Security headers ─────────────────────────────────────────────────────────
-[[headers]]
-  for = "/*"
-  [headers.values]
-    X-Frame-Options           = "DENY"
-    X-Content-Type-Options    = "nosniff"
-    Referrer-Policy           = "strict-origin-when-cross-origin"
-    Permissions-Policy        = "camera=(), microphone=(self), geolocation=()"
-    Content-Security-Policy   = "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; img-src 'self' data: blob:; connect-src 'self' https: wss:; media-src 'self' blob:; worker-src 'self' blob:;"
-
-# ─── Long-cache for hashed Flutter assets ─────────────────────────────────────
-[[headers]]
-  for = "/flutter_bootstrap.js"
-  [headers.values]
-    Cache-Control = "no-cache"
-
-[[headers]]
-  for = "/main.dart.js"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/canvaskit/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/assets/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "/icons/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-# ─── No-cache for the entry point ─────────────────────────────────────────────
-[[headers]]
-  for = "/index.html"
-  [headers.values]
-    Cache-Control = "no-cache, no-store, must-revalidate"
-
-[[headers]]
-  for = "/manifest.json"
-  [headers.values]
-    Cache-Control = "no-cache"
