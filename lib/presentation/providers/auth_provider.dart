@@ -4,7 +4,12 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../../core/network/auth_storage.dart';
 import '../../core/network/dio_client.dart';
 
-final _googleSignIn = GoogleSignIn(scopes: ['email', 'profile']);
+const _googleClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+
+final _googleSignIn = GoogleSignIn(
+  clientId: _googleClientId.isNotEmpty ? _googleClientId : null,
+  scopes: ['email', 'profile'],
+);
 
 class AuthUser {
   final String id;
