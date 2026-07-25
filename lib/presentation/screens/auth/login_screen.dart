@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/server_status_provider.dart';
 import '../../../core/theme/app_theme.dart';
 
 class LoginScreen extends ConsumerWidget {
@@ -10,6 +11,7 @@ class LoginScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authNotifierProvider);
+    final serverStatus = ref.watch(serverStatusProvider);
     final isLoading = authState.isLoading;
 
     Future<void> signInWithGoogle() async {
@@ -64,7 +66,14 @@ class LoginScreen extends ConsumerWidget {
                     color: Colors.grey,
                   ),
                 ),
-                const SizedBox(height: 56),
+                const SizedBox(height: 32),
+
+                // Server status indicator
+                _ServerStatusBadge(status: serverStatus, onRetry: () {
+                  ref.read(serverStatusProvider.notifier).retry();
+                }),
+
+                const SizedBox(height: 32),
 
                 // Google Sign-In button
                 _GoogleSignInButton(
@@ -72,11 +81,11 @@ class LoginScreen extends ConsumerWidget {
                   isLoading: isLoading,
                 ),
 
-                // Loading hint — reassures user during cold-start delay (~20 s)
+                // Loading hint during auth
                 if (isLoading) ...[
                   const SizedBox(height: 24),
                   Text(
-                    'Connecting to server…\nThis may take a moment on first login.',
+                    'Signing in…',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Colors.grey,
@@ -87,6 +96,102 @@ class LoginScreen extends ConsumerWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ServerStatusBadge extends StatelessWidget {
+  final ServerStatus status;
+  final VoidCallback onRetry;
+
+  const _ServerStatusBadge({required this.status, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 400),
+      child: switch (status) {
+        ServerStatus.checking => _badge(
+            key: const ValueKey('checking'),
+            color: const Color(0xFFF5F5F5),
+            border: const Color(0xFFE0E0E0),
+            icon: const SizedBox(
+              width: 14,
+              height: 14,
+              child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF9E9E9E)),
+            ),
+            label: 'Waking up server…',
+            labelColor: const Color(0xFF757575),
+          ),
+        ServerStatus.available => _badge(
+            key: const ValueKey('available'),
+            color: const Color(0xFFE8F5E9),
+            border: const Color(0xFF81C784),
+            icon: const Icon(Icons.check_circle_rounded, size: 16, color: Color(0xFF388E3C)),
+            label: 'Server is ready',
+            labelColor: const Color(0xFF2E7D32),
+          ),
+        ServerStatus.unavailable => Row(
+            key: const ValueKey('unavailable'),
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _badge(
+                color: const Color(0xFFFFEBEE),
+                border: const Color(0xFFE57373),
+                icon: const Icon(Icons.error_rounded, size: 16, color: Color(0xFFC62828)),
+                label: 'Server unreachable',
+                labelColor: const Color(0xFFC62828),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: onRetry,
+                child: const Text(
+                  'Retry',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF5B4FE9),
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+            ],
+          ),
+      },
+    );
+  }
+
+  Widget _badge({
+    Key? key,
+    required Color color,
+    required Color border,
+    required Widget icon,
+    required String label,
+    required Color labelColor,
+  }) {
+    return Container(
+      key: key,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          icon,
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w500,
+              color: labelColor,
+            ),
+          ),
+        ],
       ),
     );
   }
