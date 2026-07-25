@@ -5,16 +5,17 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
+import os
 from app.core.config import settings
 
 admin_app = FastAPI(title="Learn 5 by 5 — Admin", docs_url=None, redoc_url=None)
 admin_app.add_middleware(SessionMiddleware, secret_key=settings.ADMIN_SESSION_SECRET)
 
-templates = Jinja2Templates(directory="admin/templates")
+_here = os.path.dirname(os.path.abspath(__file__))
+templates = Jinja2Templates(directory=os.path.join(_here, "templates"))
 
-import os
-os.makedirs("admin/static", exist_ok=True)
-admin_app.mount("/static", StaticFiles(directory="admin/static"), name="admin-static")
+os.makedirs(os.path.join(_here, "static"), exist_ok=True)
+admin_app.mount("/static", StaticFiles(directory=os.path.join(_here, "static")), name="admin-static")
 
 
 # ── Auth helpers ──────────────────────────────────────────────────────────────

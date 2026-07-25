@@ -38,7 +38,7 @@ def create_app() -> FastAPI:
     # API routes
     app.include_router(api_router, prefix="/api/v1")
 
-    # Admin dashboard
+    # Admin dashboard (lives at /admin in the workspace root)
     from admin.app import admin_app
     app.mount("/admin", admin_app)
 

@@ -47,26 +47,41 @@ learn-5-by-5/
 
 ---
 
-## How to Run (Backend)
+## How to Run on Replit
 
+Two workflows run in parallel:
+
+| Workflow | Command | Port |
+|----------|---------|------|
+| **Start application** | `flutter run -d web-server ...` | 5000 (preview) |
+| **Backend API** | `cd backend && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload` | 8000 |
+
+### First-time backend setup
 ```bash
-cd backend
-cp .env.example .env
-# Edit .env with your actual values (DB, OpenAI, Stripe keys)
+# Install dependencies
+cd backend && pip install -r requirements.txt
 
-# With Docker (recommended):
-docker-compose up
+# Run migrations
+cd backend && PYTHONPATH=. alembic upgrade head
 
-# Or locally:
-pip install -r requirements.txt
-alembic upgrade head
-python scripts/seed.py
-uvicorn app.main:app --reload
+# Seed reference data (languages, plans, admin user)
+cd backend && PYTHONPATH=. python scripts/seed.py
 ```
 
-API docs: `http://localhost:8000/docs` (debug mode only)  
-Admin dashboard: `http://localhost:8000/admin`  
+API docs: `https://<replit-dev-domain>/docs` (DEBUG=true)  
+Admin dashboard: `https://<replit-dev-domain>/admin`  
 Default admin: `admin@learn5by5.com` / `changeme123` ← **change immediately**
+
+### Required secrets (set in Replit Secrets)
+| Secret | Purpose |
+|--------|---------|
+| `APP_DATABASE_URL` | External PostgreSQL URL (postgresql://...) |
+| `OPENAI_API_KEY` | GPT-4o + Whisper + TTS |
+| `STRIPE_SECRET_KEY` | Payments |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook verification |
+| `FIREBASE_CREDENTIALS_JSON` | Push notifications |
+
+`SECRET_KEY` and `ADMIN_SESSION_SECRET` are pre-generated in `config.py` defaults — override via env var in production.
 
 ---
 
