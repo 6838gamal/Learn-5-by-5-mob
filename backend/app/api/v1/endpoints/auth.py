@@ -20,6 +20,11 @@ class LoginRequest(BaseModel):
     password: str
 
 
+class GoogleAuthRequest(BaseModel):
+    id_token: str | None = None
+    access_token: str | None = None
+
+
 class RefreshRequest(BaseModel):
     refresh_token: str
 
@@ -34,6 +39,19 @@ class VerifyEmailRequest(BaseModel):
 
 def ok(data):
     return {"success": True, "data": data, "message": None}
+
+
+@router.post("/google")
+async def google_auth(body: GoogleAuthRequest, db: AsyncSession = Depends(get_db)):
+    if not body.id_token and not body.access_token:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            detail="Provide id_token or access_token")
+    service = AuthService(db)
+    tokens = await service.login_with_google(
+        id_token=body.id_token,
+        access_token=body.access_token,
+    )
+    return ok(tokens)
 
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
