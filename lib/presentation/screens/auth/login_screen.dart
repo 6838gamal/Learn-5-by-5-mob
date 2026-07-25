@@ -9,7 +9,8 @@ class LoginScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isLoading = ref.watch(authNotifierProvider).isLoading;
+    final authState = ref.watch(authNotifierProvider);
+    final isLoading = authState.isLoading;
 
     Future<void> signInWithGoogle() async {
       try {
@@ -21,6 +22,7 @@ class LoginScreen extends ConsumerWidget {
             SnackBar(
               content: Text(e.toString()),
               backgroundColor: Colors.red,
+              duration: const Duration(seconds: 6),
             ),
           );
         }
@@ -69,6 +71,18 @@ class LoginScreen extends ConsumerWidget {
                   onPressed: isLoading ? null : signInWithGoogle,
                   isLoading: isLoading,
                 ),
+
+                // Loading hint — reassures user during cold-start delay (~20 s)
+                if (isLoading) ...[
+                  const SizedBox(height: 24),
+                  Text(
+                    'Connecting to server…\nThis may take a moment on first login.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
