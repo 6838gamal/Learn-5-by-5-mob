@@ -1,9 +1,9 @@
 # ── Stage 1: Build Stage ──────────────────────────────────────────────────────
-FROM python:3.13-slim AS builder
+FROM python:3.12-slim AS builder
 
 WORKDIR /app
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
+ENV PYTHONTDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1
 
@@ -21,7 +21,7 @@ RUN pip install --upgrade pip && \
 
 
 # ── Stage 2: Runtime Stage ────────────────────────────────────────────────────
-FROM python:3.13-slim
+FROM python:3.12-slim
 
 WORKDIR /app
 
