@@ -1,4 +1,4 @@
-modules = ["python-3.12", "web", "swift-5.8"]
+modules = ["python-3.12", "web", "java-graalvm22.3"]
 
 [nix]
 channel = "stable-25_05"
