@@ -7,7 +7,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1
 
-COPY requirements.txt .
+# requirements live in backend/
+COPY backend/requirements.txt .
 RUN pip install --upgrade pip && pip install --prefix=/install -r requirements.txt
 
 
@@ -20,10 +21,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1
 
 COPY --from=builder /install /usr/local
-COPY . .
 
-RUN mkdir -p static/uploads
+# Copy shared backend package (app.*) and the admin package
+COPY backend/ .
+COPY admin/ ./admin/
 
-EXPOSE 8000
+RUN mkdir -p admin/static
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+EXPOSE 8001
+
+CMD ["uvicorn", "admin.main:app", "--host", "0.0.0.0", "--port", "8001"]

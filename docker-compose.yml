@@ -1,70 +1,97 @@
 version: "3.9"
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Learn 5 by 5 — Docker Compose
+#
+# Services
+#   db      – PostgreSQL 16
+#   redis   – Redis 7 (Celery broker + cache)
+#   migrate – Alembic migrations (runs once, then exits)
+#   api     – Backend REST API        → http://localhost:8000
+#   admin   – Admin dashboard         → http://localhost:8001/admin
+# ─────────────────────────────────────────────────────────────────────────────
+
 services:
 
-  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  # ── Database ────────────────────────────────────────────────────────────────
   db:
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_DB: learn5by5
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
+      POSTGRES_USER: ${POSTGRES_USER:-learn5}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-learn5secret}
+      POSTGRES_DB: ${POSTGRES_DB:-learn5by5}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-learn5}"]
+      interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
-  # ── Redis ───────────────────────────────────────────────────────────────────
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+  # ── Migrations (one-shot) ────────────────────────────────────────────────────
+  migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: alembic upgrade head
+    environment:
+      APP_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-learn5}:${POSTGRES_PASSWORD:-learn5secret}@db:5432/${POSTGRES_DB:-learn5by5}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: on-failure
 
-  # ── FastAPI Backend + Admin ─────────────────────────────────────────────────
+  # ── Backend API ──────────────────────────────────────────────────────────────
   api:
     build:
       context: ./backend
       dockerfile: Dockerfile
     restart: unless-stopped
-    env_file: ./backend/.env
-    environment:
-      DATABASE_URL: postgresql+asyncpg://postgres:password@db:5432/learn5by5
-      REDIS_URL: redis://redis:6379/0
     ports:
       - "8000:8000"
+    environment:
+      APP_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-learn5}:${POSTGRES_PASSWORD:-learn5secret}@db:5432/${POSTGRES_DB:-learn5by5}
+      SECRET_KEY: ${SECRET_KEY:-changeme_in_production}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+      FIREBASE_CREDENTIALS_JSON: ${FIREBASE_CREDENTIALS_JSON:-}
+      GOOGLE_WEB_CLIENT_ID: ${GOOGLE_WEB_CLIENT_ID:-}
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      DEBUG: ${DEBUG:-false}
     depends_on:
       db:
         condition: service_healthy
-      redis:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     volumes:
-      - ./backend/static:/app/static
+      - uploads_data:/app/static/uploads
 
-  # ── Celery Worker (Phase 7 — notifications) ─────────────────────────────────
-  # celery:
-  #   build:
-  #     context: ./backend
-  #     dockerfile: Dockerfile
-  #   command: celery -A app.celery_app worker --loglevel=info
-  #   env_file: ./backend/.env
-  #   environment:
-  #     DATABASE_URL: postgresql+asyncpg://postgres:password@db:5432/learn5by5
-  #     REDIS_URL: redis://redis:6379/0
-  #   depends_on:
-  #     - api
-  #     - redis
+  # ── Admin Dashboard ──────────────────────────────────────────────────────────
+  admin:
+    build:
+      context: .
+      dockerfile: admin/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      APP_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-learn5}:${POSTGRES_PASSWORD:-learn5secret}@db:5432/${POSTGRES_DB:-learn5by5}
+      ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET:-changeme_in_production}
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      DEBUG: ${DEBUG:-false}
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    volumes:
+      - uploads_data:/app/static/uploads
 
+
+# ─────────────────────────────────────────────────────────────────────────────
 volumes:
   postgres_data:
+  uploads_data:

@@ -1,0 +1,27 @@
+__pycache__
+*.pyc
+*.pyo
+.Python
+*.egg-info
+.eggs
+dist
+build
+.env
+.env.*
+!.env.example
+.git
+.gitignore
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+build/
+android/
+ios/
+linux/
+macos/
+windows/
+# Tests
+backend/tests/
+.pytest_cache
+*.log
