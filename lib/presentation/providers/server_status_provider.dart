@@ -9,9 +9,17 @@ class ServerStatusNotifier extends StateNotifier<ServerStatus> {
     _wake();
   }
 
+  // Always ping the real backend URL directly — AppConfig.baseUrl may be empty
+  // if API_BASE_URL was not injected at compile time, which would give a false positive.
+  static String get _pingBase {
+    const configured = AppConfig.baseUrl;
+    if (configured.isNotEmpty) return configured;
+    return 'https://learn-5-by-5-api-backend.onrender.com/api/v1';
+  }
+
   // Dedicated Dio instance — no auth interceptors, so we get clean connection results.
-  final _dio = Dio(BaseOptions(
-    baseUrl: AppConfig.baseUrl,
+  late final _dio = Dio(BaseOptions(
+    baseUrl: _pingBase,
     connectTimeout: const Duration(seconds: 12),
     receiveTimeout: const Duration(seconds: 12),
   ));
