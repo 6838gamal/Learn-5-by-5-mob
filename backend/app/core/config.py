@@ -39,7 +39,7 @@ class Settings(BaseSettings):
     DATABASE_MAX_OVERFLOW: int = 20
 
     # JWT
-    SECRET_KEY: str = "change-me-in-production"
+    SECRET_KEY: str = "ffe5af0d8710be439cde55dc6819ace82b624f9dd973a665a292c55702cc98db"
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
@@ -81,7 +81,7 @@ class Settings(BaseSettings):
     AWS_REGION: str = "us-east-1"
 
     # Admin
-    ADMIN_SESSION_SECRET: str = "change-me-admin-secret"
+    ADMIN_SESSION_SECRET: str = "d8eae935abe71b51c23e223f0e9b11c192ca3f366d19f7ddb0cbaa68414e006c"
 
     # Rate Limiting
     RATE_LIMIT_PER_MINUTE: int = 60
