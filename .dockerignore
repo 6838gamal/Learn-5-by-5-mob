@@ -21,6 +21,11 @@ ios/
 linux/
 macos/
 windows/
+# Docker
+admin/Dockerfile
+backend/Dockerfile
+backend/.dockerignore
+
 # Tests
 backend/tests/
 .pytest_cache
