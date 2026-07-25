@@ -8,7 +8,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1
 
 COPY requirements.txt .
-RUN pip install --upgrade pip && pip install --prefix=/install -r requirements.txt
+RUN pip install --upgrade pip && pip install --prefix=/install -r backend/requirements.txt
 
 
 # ── Runtime stage ─────────────────────────────────────────────────────────────
