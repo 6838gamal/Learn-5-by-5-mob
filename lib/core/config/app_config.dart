@@ -1,7 +1,7 @@
 class AppConfig {
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://localhost:8000/api/v1',
+    defaultValue: 'https://learn-5-by-5-api-backend.onrender.com/api/v1',
   );
 
   static const int connectTimeoutMs = 15000;

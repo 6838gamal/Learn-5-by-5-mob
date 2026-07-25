@@ -31,7 +31,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "sed -i \"s|GOOGLE_CLIENT_ID_PLACEHOLDER|$GOOGLE_WEB_CLIENT_ID|g\" web/index.html && flutter run -d web-server --web-port=5000 --web-hostname=0.0.0.0 --dart-define=GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID"
+args = "sed -i \"s|GOOGLE_CLIENT_ID_PLACEHOLDER|$GOOGLE_WEB_CLIENT_ID|g\" web/index.html && flutter run -d web-server --web-port=5000 --web-hostname=0.0.0.0 --dart-define=GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID --dart-define=API_BASE_URL=https://learn-5-by-5-api-backend.onrender.com/api/v1"
 waitForPort = 5000
 
 [[workflows.workflow]]
