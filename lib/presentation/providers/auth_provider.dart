@@ -53,7 +53,9 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       final res = await _dio.get('/auth/me');
       state = state.copyWith(user: AuthUser.fromJson(res.data['data'] as Map<String, dynamic>));
-    } catch (_) {}
+    } catch (_) {
+      // Silently ignore — tokens are still valid; user data will reload on next app open.
+    }
   }
 
   Future<void> loginWithGoogle() async {
@@ -138,7 +140,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   String _parseError(Object e) {
     if (e is DioException) {
-      return e.response?.data?['message'] as String? ?? e.message ?? 'Unknown error';
+      switch (e.type) {
+        case DioExceptionType.connectionTimeout:
+        case DioExceptionType.receiveTimeout:
+        case DioExceptionType.sendTimeout:
+          return 'Server is starting up — please wait a moment and try again.';
+        case DioExceptionType.connectionError:
+          return 'No internet connection. Please check your network and try again.';
+        default:
+          return e.response?.data?['message'] as String? ??
+              e.response?.data?['detail'] as String? ??
+              e.message ??
+              'Something went wrong. Please try again.';
+      }
     }
     return e.toString();
   }
