@@ -18,6 +18,10 @@ author = "agent"
 task = "workflow.run"
 args = "Start application"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Backend API"
+
 [[workflows.workflow]]
 name = "Start application"
 author = "agent"
@@ -29,6 +33,18 @@ outputType = "webview"
 task = "shell.exec"
 args = "sed -i \"s|GOOGLE_CLIENT_ID_PLACEHOLDER|$GOOGLE_WEB_CLIENT_ID|g\" web/index.html && flutter run -d web-server --web-port=5000 --web-hostname=0.0.0.0 --dart-define=GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID"
 waitForPort = 5000
+
+[[workflows.workflow]]
+name = "Backend API"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd backend && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+waitForPort = 8000
+
+[workflows.workflow.metadata]
+outputType = "console"
 
 [[ports]]
 localPort = 5000

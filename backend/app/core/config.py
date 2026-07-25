@@ -1,5 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator
 from functools import lru_cache
+import os
 
 
 class Settings(BaseSettings):
@@ -12,15 +14,27 @@ class Settings(BaseSettings):
     # App
     APP_NAME: str = "Learn 5 by 5"
     APP_VERSION: str = "1.0.0"
-    DEBUG: bool = False
+    DEBUG: bool = True
     ENVIRONMENT: str = "development"
 
     # Server
     HOST: str = "0.0.0.0"
     PORT: int = 8000
 
-    # Database
+    # Database — reads APP_DATABASE_URL first, falls back to DATABASE_URL
     DATABASE_URL: str = "postgresql+asyncpg://user:password@localhost:5432/learn5by5"
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def resolve_database_url(cls, v):
+        # Prefer APP_DATABASE_URL (avoids Replit-managed DATABASE_URL collision)
+        url = os.environ.get("APP_DATABASE_URL") or v
+        # asyncpg requires the +asyncpg driver specifier
+        if url.startswith("postgresql://"):
+            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+        return url
     DATABASE_POOL_SIZE: int = 10
     DATABASE_MAX_OVERFLOW: int = 20
 
