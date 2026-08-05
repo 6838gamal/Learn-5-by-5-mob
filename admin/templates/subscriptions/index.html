@@ -3,7 +3,7 @@
 {% block breadcrumb %}Subscriptions{% endblock %}
 
 {% block header_actions %}
-<a href="/admin/subscriptions/plans"
+<a href="/subscriptions/plans"
    class="text-sm text-indigo-600 hover:underline font-medium">
   View Plans →
 </a>
@@ -89,7 +89,7 @@
         </td>
         <td class="px-4 py-3 text-right">
           {% if sub.user_id %}
-          <a href="/admin/users/{{ sub.user_id }}"
+          <a href="/users/{{ sub.user_id }}"
              class="text-indigo-600 hover:underline text-xs">User →</a>
           {% endif %}
         </td>

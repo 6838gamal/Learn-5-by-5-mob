@@ -111,7 +111,7 @@ async def _safe_get(client: httpx.AsyncClient, path: str, params: dict | None = 
 def get_admin_token(request: Request) -> str:
     token = request.session.get("admin_token")
     if not token:
-        raise HTTPException(status_code=302, headers={"Location": "/admin/login"})
+        raise HTTPException(status_code=302, headers={"Location": "/login"})
     return token
 
 
@@ -124,7 +124,7 @@ def get_admin_name(request: Request) -> str:
 @admin_app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
     if request.session.get("admin_token"):
-        return RedirectResponse("/admin/dashboard", status_code=302)
+        return RedirectResponse("/dashboard", status_code=302)
     return templates.TemplateResponse(request, "auth/login.html", {"error": None})
 
 
@@ -142,7 +142,7 @@ async def login(request: Request, email: str = Form(...), password: str = Form(.
             request.session["admin_token"] = os.environ.get("ADMIN_API_KEY", "__local__")
             request.session["admin_name"] = email.split("@")[0].title()
             request.session["admin_email"] = email
-            return RedirectResponse("/admin/dashboard", status_code=302)
+            return RedirectResponse("/dashboard", status_code=302)
         else:
             return templates.TemplateResponse(request, "auth/login.html",
                                               {"error": "Invalid email or password."},
@@ -171,20 +171,20 @@ async def login(request: Request, email: str = Form(...), password: str = Form(.
     request.session["admin_token"] = token
     request.session["admin_name"] = name
     request.session["admin_email"] = email
-    return RedirectResponse("/admin/dashboard", status_code=302)
+    return RedirectResponse("/dashboard", status_code=302)
 
 
 @admin_app.get("/logout")
 async def logout(request: Request):
     request.session.clear()
-    return RedirectResponse("/admin/login", status_code=302)
+    return RedirectResponse("/login", status_code=302)
 
 
 # ── Root redirect ─────────────────────────────────────────────────────────────
 
 @admin_app.get("/")
 async def root():
-    return RedirectResponse("/admin/dashboard", status_code=302)
+    return RedirectResponse("/dashboard", status_code=302)
 
 
 # ── Dashboard ─────────────────────────────────────────────────────────────────
@@ -306,7 +306,7 @@ async def suspend_user(user_id: str, request: Request, token: str = Depends(get_
                        json={}, headers={"Content-Type": "application/json"})
         except (AdminApiError, httpx.HTTPError):
             pass
-    return RedirectResponse(f"/admin/users/{user_id}?success=suspended", status_code=302)
+    return RedirectResponse(f"/users/{user_id}?success=suspended", status_code=302)
 
 
 @admin_app.post("/users/{user_id}/activate")
@@ -317,7 +317,7 @@ async def activate_user(user_id: str, request: Request, token: str = Depends(get
                        json={}, headers={"Content-Type": "application/json"})
         except (AdminApiError, httpx.HTTPError):
             pass
-    return RedirectResponse(f"/admin/users/{user_id}?success=activated", status_code=302)
+    return RedirectResponse(f"/users/{user_id}?success=activated", status_code=302)
 
 
 # ── Subscriptions ─────────────────────────────────────────────────────────────
@@ -445,7 +445,7 @@ async def support_reply(ticket_id: str, request: Request,
                        json={"message": content}, headers={"Content-Type": "application/json"})
         except (AdminApiError, httpx.HTTPError):
             pass
-    return RedirectResponse(f"/admin/support/tickets/{ticket_id}", status_code=302)
+    return RedirectResponse(f"/support/tickets/{ticket_id}", status_code=302)
 
 
 # ── Notifications ─────────────────────────────────────────────────────────────
@@ -473,7 +473,7 @@ async def send_notification(request: Request,
                        headers={"Content-Type": "application/json"})
         except (AdminApiError, httpx.HTTPError):
             pass
-    return RedirectResponse("/admin/notifications?success=1", status_code=302)
+    return RedirectResponse("/notifications?success=1", status_code=302)
 
 
 # ── Content: Words ────────────────────────────────────────────────────────────

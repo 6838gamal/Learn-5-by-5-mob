@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Ticket{% endblock %}
 {% block breadcrumb %}
-  <a href="/admin/support/tickets" class="hover:text-indigo-600">Support Tickets</a>
+  <a href="/support/tickets" class="hover:text-indigo-600">Support Tickets</a>
   <span class="mx-1 text-gray-300">/</span>
   <span>{{ ticket.subject[:40] if ticket else "Not found" }}{% if ticket and ticket.subject|length > 40 %}…{% endif %}</span>
 {% endblock %}
@@ -56,7 +56,7 @@
 <!-- Reply form -->
 <div class="bg-white rounded-xl border border-gray-200 p-5">
   <h3 class="font-semibold text-gray-700 text-sm mb-3">Reply to User</h3>
-  <form method="post" action="/admin/support/tickets/{{ ticket.id }}/reply">
+  <form method="post" action="/support/tickets/{{ ticket.id }}/reply">
     <textarea name="content" rows="4" required
       class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm
              focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-3 resize-none"

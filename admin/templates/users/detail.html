@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}User{% endblock %}
-{% block breadcrumb %}<a href="/admin/users" class="hover:text-indigo-600">Users</a>
+{% block breadcrumb %}<a href="/users" class="hover:text-indigo-600">Users</a>
   <span class="mx-1 text-gray-300">/</span>
   <span>{{ user.email if user else "Not found" }}</span>
 {% endblock %}
@@ -73,7 +73,7 @@
     <!-- Actions -->
     <div class="mt-5 pt-4 border-t border-gray-100 flex flex-col gap-2">
       {% if user.is_active or user.is_active is none %}
-      <form method="post" action="/admin/users/{{ user.id }}/suspend"
+      <form method="post" action="/users/{{ user.id }}/suspend"
             onsubmit="return confirm('Suspend this account?')">
         <button type="submit"
           class="w-full bg-red-50 text-red-600 border border-red-200 px-3 py-2
@@ -82,7 +82,7 @@
         </button>
       </form>
       {% else %}
-      <form method="post" action="/admin/users/{{ user.id }}/activate">
+      <form method="post" action="/users/{{ user.id }}/activate">
         <button type="submit"
           class="w-full bg-green-50 text-green-600 border border-green-200 px-3 py-2
                  rounded-lg text-sm font-medium hover:bg-green-100 transition">

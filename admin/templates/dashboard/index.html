@@ -49,7 +49,7 @@
   <div class="bg-white rounded-xl border border-gray-200 p-6">
     <div class="flex items-center justify-between mb-4">
       <h3 class="font-semibold text-gray-700 text-sm">Recent Sign-Ups</h3>
-      <a href="/admin/users" class="text-xs text-indigo-600 hover:underline">View all →</a>
+      <a href="/users" class="text-xs text-indigo-600 hover:underline">View all →</a>
     </div>
     <ul class="space-y-3">
       {% for user in recent_users %}
@@ -61,7 +61,7 @@
           <p class="text-sm font-medium text-gray-800 truncate">{{ user.full_name or user.email or "—" }}</p>
           <p class="text-xs text-gray-400">{{ user.created_at|fmt_date if user.created_at else "—" }}</p>
         </div>
-        <a href="/admin/users/{{ user.id }}" class="ml-auto text-xs text-indigo-600 hover:underline shrink-0">View</a>
+        <a href="/users/{{ user.id }}" class="ml-auto text-xs text-indigo-600 hover:underline shrink-0">View</a>
       </li>
       {% else %}
       <li class="text-sm text-gray-400 text-center py-4">No data available</li>
