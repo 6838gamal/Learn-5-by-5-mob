@@ -1,20 +1,81 @@
 {% extends "base.html" %}
 {% block title %}Daily Lessons{% endblock %}
+{% block breadcrumb %}Content / Daily Lessons{% endblock %}
 
 {% block content %}
-<div class="mb-6">
-  <h2 class="text-2xl font-bold text-gray-800">Daily Lesson Assignment</h2>
-  <p class="text-gray-500 text-sm mt-1">Assign 5 words per language per day</p>
-</div>
-
-<div class="bg-white rounded-xl border border-gray-200 p-6">
-  <p class="text-gray-500 text-sm">
-    Select a date and language to assign the day's 5 words.
-    Words can be assigned manually or auto-selected based on difficulty rotation.
-  </p>
-  <!-- Full implementation in Phase 2 -->
-  <div class="mt-6 text-center text-gray-300 py-12 border-2 border-dashed border-gray-200 rounded-xl">
-    Daily lesson assignment UI — Phase 2
+<div class="flex items-center justify-between mb-5">
+  <div>
+    <h2 class="text-xl font-bold text-gray-800">Daily Lesson Assignment</h2>
+    <p class="text-gray-400 text-sm mt-0.5">5 words assigned per language per day</p>
   </div>
 </div>
+
+<!-- Language filter -->
+<form method="get" class="flex gap-2 mb-4">
+  <select name="language_id"
+    class="border border-gray-300 rounded-lg px-3 py-2 text-sm bg-white
+           focus:outline-none focus:ring-2 focus:ring-indigo-500">
+    <option value="1" {% if language_id == 1 %}selected{% endif %}>English</option>
+    <option value="2" {% if language_id == 2 %}selected{% endif %}>Arabic</option>
+    <option value="3" {% if language_id == 3 %}selected{% endif %}>French</option>
+    <option value="4" {% if language_id == 4 %}selected{% endif %}>Spanish</option>
+    <option value="5" {% if language_id == 5 %}selected{% endif %}>German</option>
+  </select>
+  <button type="submit"
+    class="bg-gray-100 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm hover:bg-gray-200">
+    Filter
+  </button>
+</form>
+
+{% if lessons %}
+<div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 border-b border-gray-200">
+      <tr>
+        <th class="px-4 py-3 text-left font-medium text-gray-500 text-xs uppercase">Date</th>
+        <th class="px-4 py-3 text-left font-medium text-gray-500 text-xs uppercase">Language</th>
+        <th class="px-4 py-3 text-left font-medium text-gray-500 text-xs uppercase">Words</th>
+        <th class="px-4 py-3 text-left font-medium text-gray-500 text-xs uppercase">Completions</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      {% for lesson in lessons %}
+      <tr class="hover:bg-gray-50">
+        <td class="px-4 py-3 font-medium text-gray-800">
+          {{ lesson.lesson_date|fmt_date if lesson.lesson_date else lesson.date|fmt_date if lesson.date else "—" }}
+        </td>
+        <td class="px-4 py-3 capitalize text-gray-600">
+          {{ lesson.language or lesson.language_code or "—" }}
+        </td>
+        <td class="px-4 py-3 text-gray-600">
+          {% set wc = lesson.word_count or (lesson.words|length if lesson.words else 0) %}
+          <span class="font-medium">{{ wc }}</span>
+          <span class="text-gray-400">/ 5</span>
+        </td>
+        <td class="px-4 py-3 text-gray-600">{{ lesson.completion_count or "—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- Pagination -->
+<div class="flex justify-between items-center mt-4 text-sm text-gray-500">
+  {% if page > 1 %}
+  <a href="?language_id={{ language_id }}&page={{ page - 1 }}"
+     class="px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50">← Previous</a>
+  {% else %}<span></span>{% endif %}
+  <span class="text-xs">Page {{ page }}</span>
+  {% if lessons|length == 30 %}
+  <a href="?language_id={{ language_id }}&page={{ page + 1 }}"
+     class="px-3 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-gray-50">Next →</a>
+  {% else %}<span></span>{% endif %}
+</div>
+
+{% else %}
+<div class="bg-white rounded-xl border-2 border-dashed border-gray-200 p-12 text-center">
+  <p class="text-gray-400 text-sm">No lesson assignments found for this language.</p>
+  <p class="text-gray-300 text-xs mt-1">The backend will auto-assign 5 words daily.</p>
+</div>
+{% endif %}
 {% endblock %}

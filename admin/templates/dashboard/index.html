@@ -1,62 +1,115 @@
 {% extends "base.html" %}
 {% block title %}Dashboard{% endblock %}
+{% block breadcrumb %}Dashboard{% endblock %}
 
 {% block content %}
 <div class="mb-6">
-  <h2 class="text-2xl font-bold text-gray-800">Dashboard</h2>
-  <p class="text-gray-500 text-sm mt-1">Overview of Learn 5 by 5</p>
+  <h2 class="text-xl font-bold text-gray-800">Overview</h2>
+  <p class="text-gray-400 text-sm mt-0.5">Learn 5×5 platform at a glance</p>
 </div>
 
 <!-- Metric cards -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+<div class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
   <div class="bg-white rounded-xl border border-gray-200 p-5">
-    <p class="text-sm text-gray-500">Total Users</p>
-    <p class="text-3xl font-bold text-indigo-600 mt-1">{{ metrics.total_users }}</p>
+    <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">Total Users</p>
+    <p class="text-3xl font-bold text-indigo-600 mt-2">{{ metrics.total_users }}</p>
   </div>
   <div class="bg-white rounded-xl border border-gray-200 p-5">
-    <p class="text-sm text-gray-500">Active Today</p>
-    <p class="text-3xl font-bold text-green-600 mt-1">{{ metrics.active_today }}</p>
+    <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">Active Today</p>
+    <p class="text-3xl font-bold text-green-600 mt-2">{{ metrics.active_today }}</p>
   </div>
   <div class="bg-white rounded-xl border border-gray-200 p-5">
-    <p class="text-sm text-gray-500">Revenue This Month</p>
-    <p class="text-3xl font-bold text-emerald-600 mt-1">${{ metrics.revenue_month }}</p>
+    <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">Revenue This Month</p>
+    <p class="text-3xl font-bold text-emerald-600 mt-2">
+      {% if metrics.revenue_month != '—' %}${{ metrics.revenue_month }}{% else %}—{% endif %}
+    </p>
   </div>
   <div class="bg-white rounded-xl border border-gray-200 p-5">
-    <p class="text-sm text-gray-500">Active Subscriptions</p>
-    <p class="text-3xl font-bold text-purple-600 mt-1">{{ metrics.active_subscriptions }}</p>
+    <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">Active Subscriptions</p>
+    <p class="text-3xl font-bold text-purple-600 mt-2">{{ metrics.active_subscriptions }}</p>
   </div>
   <div class="bg-white rounded-xl border border-gray-200 p-5">
-    <p class="text-sm text-gray-500">AI Conversations Today</p>
-    <p class="text-3xl font-bold text-blue-600 mt-1">{{ metrics.ai_conversations_today }}</p>
+    <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">AI Conversations Today</p>
+    <p class="text-3xl font-bold text-blue-600 mt-2">{{ metrics.ai_conversations_today }}</p>
   </div>
   <div class="bg-white rounded-xl border border-gray-200 p-5">
-    <p class="text-sm text-gray-500">Lessons Completed Today</p>
-    <p class="text-3xl font-bold text-orange-600 mt-1">{{ metrics.lessons_completed_today }}</p>
+    <p class="text-xs font-medium text-gray-400 uppercase tracking-wide">Lessons Completed Today</p>
+    <p class="text-3xl font-bold text-orange-500 mt-2">{{ metrics.lessons_completed_today }}</p>
   </div>
 </div>
 
-<!-- Chart placeholder -->
-<div class="bg-white rounded-xl border border-gray-200 p-6">
-  <h3 class="font-semibold text-gray-700 mb-4">User Activity (Last 30 Days)</h3>
-  <canvas id="activityChart" height="80"></canvas>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+  <!-- Activity chart -->
+  <div class="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6">
+    <h3 class="font-semibold text-gray-700 mb-4 text-sm">Daily Active Users — Last 30 Days</h3>
+    <canvas id="activityChart" height="100"></canvas>
+  </div>
+
+  <!-- Recent users -->
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-semibold text-gray-700 text-sm">Recent Sign-Ups</h3>
+      <a href="/admin/users" class="text-xs text-indigo-600 hover:underline">View all →</a>
+    </div>
+    <ul class="space-y-3">
+      {% for user in recent_users %}
+      <li class="flex items-center gap-3">
+        <div class="w-7 h-7 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs font-bold shrink-0">
+          {{ (user.full_name or user.email or '?')[0]|upper }}
+        </div>
+        <div class="min-w-0">
+          <p class="text-sm font-medium text-gray-800 truncate">{{ user.full_name or user.email or "—" }}</p>
+          <p class="text-xs text-gray-400">{{ user.created_at|fmt_date if user.created_at else "—" }}</p>
+        </div>
+        <a href="/admin/users/{{ user.id }}" class="ml-auto text-xs text-indigo-600 hover:underline shrink-0">View</a>
+      </li>
+      {% else %}
+      <li class="text-sm text-gray-400 text-center py-4">No data available</li>
+      {% endfor %}
+    </ul>
+  </div>
 </div>
 
 <script>
+(function() {
+  const rawData = {{ growth | tojson }};
+  let labels, values;
+
+  if (Array.isArray(rawData) && rawData.length > 0 && typeof rawData[0] === 'object') {
+    labels = rawData.map(d => d.date || d.day || d.label || '');
+    values = rawData.map(d => d.count || d.value || d.active_users || 0);
+  } else if (Array.isArray(rawData) && rawData.length > 0) {
+    labels = rawData.map((_, i) => `Day ${i + 1}`);
+    values = rawData;
+  } else {
+    // Placeholder when API hasn't returned data yet
+    labels = Array.from({length: 30}, (_, i) => `Day ${i + 1}`);
+    values = Array.from({length: 30}, () => 0);
+  }
+
   const ctx = document.getElementById('activityChart').getContext('2d');
   new Chart(ctx, {
     type: 'line',
     data: {
-      labels: Array.from({length: 30}, (_, i) => `Day ${i+1}`),
+      labels,
       datasets: [{
         label: 'Active Users',
-        data: Array.from({length: 30}, () => Math.floor(Math.random() * 50)),
+        data: values,
         borderColor: '#6366f1',
-        backgroundColor: 'rgba(99,102,241,0.08)',
+        backgroundColor: 'rgba(99,102,241,0.07)',
         tension: 0.4,
         fill: true,
+        pointRadius: 2,
       }]
     },
-    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { precision: 0 } },
+        x: { ticks: { maxTicksLimit: 8, font: { size: 11 } } }
+      }
+    }
   });
+})();
 </script>
 {% endblock %}

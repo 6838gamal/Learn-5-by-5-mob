@@ -1,30 +1,71 @@
 {% extends "base.html" %}
 {% block title %}Subscription Plans{% endblock %}
+{% block breadcrumb %}
+  <a href="/admin/subscriptions" class="hover:text-indigo-600">Subscriptions</a>
+  <span class="mx-1 text-gray-300">/</span>Plans
+{% endblock %}
 
 {% block content %}
-<div class="flex items-center justify-between mb-6">
-  <h2 class="text-2xl font-bold text-gray-800">Subscription Plans</h2>
+<div class="flex items-center justify-between mb-5">
+  <h2 class="text-xl font-bold text-gray-800">Subscription Plans</h2>
 </div>
 
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+{% if not plans %}
+<div class="bg-yellow-50 border border-yellow-200 text-yellow-800 rounded-xl px-5 py-4 text-sm">
+  ⚠ No plans loaded — the backend API may not be reachable.
+</div>
+{% else %}
+<div class="grid grid-cols-1 md:grid-cols-3 gap-5">
   {% for plan in plans %}
-  <div class="bg-white rounded-xl border border-gray-200 p-6">
-    <div class="flex items-center justify-between mb-2">
-      <h3 class="text-lg font-bold text-gray-800">{{ plan.name }}</h3>
-      {% if not plan.is_active %}<span class="text-xs text-red-500">Inactive</span>{% endif %}
+  <div class="bg-white rounded-xl border-2
+    {% if plan.slug == 'premium' %}border-indigo-300
+    {% elif plan.slug == 'lifetime' %}border-amber-300
+    {% else %}border-gray-200{% endif %} p-6">
+
+    <div class="flex items-start justify-between mb-3">
+      <div>
+        <h3 class="text-lg font-bold text-gray-800">{{ plan.name }}</h3>
+        <p class="text-xs text-gray-400 mt-0.5">Slug: <code class="bg-gray-100 px-1 py-0.5 rounded">{{ plan.slug }}</code></p>
+      </div>
+      {% if plan.is_active == false %}
+        <span class="text-xs text-red-500 font-medium">Inactive</span>
+      {% else %}
+        <span class="text-xs text-green-600 font-medium">Active</span>
+      {% endif %}
     </div>
-    <p class="text-3xl font-bold text-indigo-600 mb-1">
-      ${{ "%.2f"|format(plan.price_usd) }}
-      {% if plan.billing_period %}<span class="text-sm font-normal text-gray-400">/{{ plan.billing_period }}</span>{% endif %}
+
+    <p class="text-3xl font-bold
+      {% if plan.slug == 'premium' %}text-indigo-600
+      {% elif plan.slug == 'lifetime' %}text-amber-600
+      {% else %}text-gray-700{% endif %} mb-4">
+      {% if plan.price_usd is defined %}
+        ${{ "%.2f"|format(plan.price_usd|float) }}
+        {% if plan.billing_period %}
+          <span class="text-sm font-normal text-gray-400">/{{ plan.billing_period }}</span>
+        {% endif %}
+      {% else %}Free{% endif %}
     </p>
-    <p class="text-xs text-gray-500 mb-4">Slug: <code>{{ plan.slug }}</code></p>
-    <ul class="text-sm text-gray-600 space-y-1">
-      <li>AI chat limit: {{ plan.ai_chat_limit or "Unlimited" }}</li>
-      <li>Lesson limit: {{ plan.lesson_limit or "Unlimited" }}</li>
+
+    <ul class="space-y-2 text-sm text-gray-600">
+      <li class="flex items-center gap-2">
+        <span class="w-4 h-4 rounded-full bg-gray-100 flex items-center justify-center text-xs">5</span>
+        Words / day limit
+      </li>
+      {% if plan.ai_chat_limit is defined %}
+      <li class="flex items-center gap-2">
+        <span class="w-4 h-4 rounded-full bg-gray-100 flex items-center justify-center text-xs">🤖</span>
+        AI chat: {{ plan.ai_chat_limit if plan.ai_chat_limit else "Unlimited" }}/day
+      </li>
+      {% endif %}
+      {% if plan.lesson_limit is defined %}
+      <li class="flex items-center gap-2">
+        <span class="w-4 h-4 rounded-full bg-gray-100 flex items-center justify-center text-xs">📚</span>
+        Lessons: {{ plan.lesson_limit if plan.lesson_limit else "Unlimited" }}/day
+      </li>
+      {% endif %}
     </ul>
   </div>
-  {% else %}
-  <div class="col-span-3 text-center text-gray-400 py-12">No plans configured.</div>
   {% endfor %}
 </div>
+{% endif %}
 {% endblock %}

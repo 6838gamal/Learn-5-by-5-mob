@@ -1,27 +1,78 @@
 {% extends "base.html" %}
 {% block title %}Settings{% endblock %}
+{% block breadcrumb %}Settings{% endblock %}
 
 {% block content %}
-<div class="mb-6">
-  <h2 class="text-2xl font-bold text-gray-800">App Settings</h2>
+<div class="mb-5">
+  <h2 class="text-xl font-bold text-gray-800">Settings</h2>
+  <p class="text-gray-400 text-sm mt-0.5">Dashboard configuration and info</p>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
   <div class="bg-white rounded-xl border border-gray-200 p-6">
-    <h3 class="font-semibold text-gray-700 mb-4">General</h3>
-    <p class="text-sm text-gray-500">App-wide configuration settings will appear here.</p>
+    <h3 class="font-semibold text-gray-700 text-sm mb-4">API Configuration</h3>
+    <dl class="space-y-3 text-sm">
+      <div>
+        <dt class="text-xs text-gray-400 uppercase tracking-wide mb-1">Backend API Base URL</dt>
+        <dd class="font-mono text-xs bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 break-all">
+          {{ api_base_url }}
+        </dd>
+      </div>
+    </dl>
   </div>
+
   <div class="bg-white rounded-xl border border-gray-200 p-6">
-    <h3 class="font-semibold text-gray-700 mb-4">AI Settings</h3>
-    <p class="text-sm text-gray-500">Configure OpenAI model, prompts, and usage limits.</p>
+    <h3 class="font-semibold text-gray-700 text-sm mb-4">Admin Session</h3>
+    <dl class="space-y-3 text-sm">
+      <div class="flex justify-between">
+        <dt class="text-gray-400">Signed in as</dt>
+        <dd class="font-medium">{{ admin_name }}</dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-400">Session expires</dt>
+        <dd class="font-medium">8 hours from login</dd>
+      </div>
+    </dl>
+    <div class="mt-4 pt-4 border-t border-gray-100">
+      <a href="/admin/logout"
+         class="text-sm text-red-600 hover:underline font-medium">Sign out →</a>
+    </div>
   </div>
+
   <div class="bg-white rounded-xl border border-gray-200 p-6">
-    <h3 class="font-semibold text-gray-700 mb-4">Email Settings</h3>
-    <p class="text-sm text-gray-500">SMTP configuration for transactional emails.</p>
+    <h3 class="font-semibold text-gray-700 text-sm mb-4">Platform Info</h3>
+    <dl class="space-y-3 text-sm">
+      <div class="flex justify-between">
+        <dt class="text-gray-400">App Name</dt>
+        <dd class="font-medium">Learn 5×5</dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-400">Words / Day</dt>
+        <dd class="font-medium">5 (enforced)</dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-400">SRS Algorithm</dt>
+        <dd class="font-medium">SM-2</dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-400">Supported Languages</dt>
+        <dd class="font-medium">EN, AR, FR, ES, DE</dd>
+      </div>
+    </dl>
   </div>
+
   <div class="bg-white rounded-xl border border-gray-200 p-6">
-    <h3 class="font-semibold text-gray-700 mb-4">Backups & Logs</h3>
-    <p class="text-sm text-gray-500">Database backup management and log viewer.</p>
+    <h3 class="font-semibold text-gray-700 text-sm mb-4">Quick Links</h3>
+    <ul class="space-y-2 text-sm">
+      <li><a href="/admin/dashboard" class="text-indigo-600 hover:underline">→ Dashboard</a></li>
+      <li><a href="/admin/users" class="text-indigo-600 hover:underline">→ Manage Users</a></li>
+      <li><a href="/admin/subscriptions" class="text-indigo-600 hover:underline">→ Subscriptions</a></li>
+      <li><a href="/admin/subscriptions/plans" class="text-indigo-600 hover:underline">→ Subscription Plans</a></li>
+      <li><a href="/admin/support/tickets" class="text-indigo-600 hover:underline">→ Support Tickets</a></li>
+      <li><a href="/admin/notifications" class="text-indigo-600 hover:underline">→ Send Notifications</a></li>
+    </ul>
   </div>
+
 </div>
 {% endblock %}

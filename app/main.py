@@ -8,6 +8,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from app.config import get_settings
 from app.routers import auth, onboarding, home, lesson, review, quiz, ai_chat, profile, subscription, support, notifications
+from admin.app import admin_app
 
 settings = get_settings()
 
@@ -22,6 +23,9 @@ app.add_middleware(
     https_only=False,
     max_age=60 * 60 * 24 * 30,  # 30 days
 )
+
+# ── Admin sub-app ─────────────────────────────────────────────────────────────
+app.mount("/admin", admin_app)
 
 # ── Static files ──────────────────────────────────────────────────────────────
 app.mount("/static", StaticFiles(directory="app/static"), name="static")

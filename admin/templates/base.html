@@ -1,80 +1,164 @@
 <!DOCTYPE html>
-<html lang="en" x-data="{ sidebarOpen: true }">
+<html lang="en" x-data="{ sidebarOpen: window.innerWidth >= 1024 }">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}Admin{% endblock %} — Learn 5 by 5</title>
+  <title>{% block title %}Admin{% endblock %} — Learn 5×5</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50:'#eef2ff', 100:'#e0e7ff', 400:'#818cf8', 500:'#6366f1', 600:'#4f46e5', 700:'#4338ca', 800:'#3730a3', 900:'#1e1b4b' }
+          }
+        }
+      }
+    }
+  </script>
   <script src="https://unpkg.com/htmx.org@1.9.10"></script>
   <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     [x-cloak] { display: none !important; }
+    .nav-item { @apply flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors; }
+    .nav-item:not(.active) { @apply text-indigo-200 hover:bg-indigo-700 hover:text-white; }
+    .nav-item.active { @apply bg-indigo-700 text-white; }
   </style>
 </head>
-<body class="bg-gray-50 text-gray-900 font-sans">
+<body class="bg-gray-50 text-gray-900 font-sans antialiased">
 
 <div class="flex h-screen overflow-hidden">
 
   <!-- Sidebar -->
-  <aside class="w-64 bg-indigo-900 text-white flex flex-col flex-shrink-0" x-show="sidebarOpen">
-    <div class="px-6 py-5 border-b border-indigo-700">
-      <h1 class="text-lg font-bold tracking-wide">Learn 5 by 5</h1>
-      <p class="text-xs text-indigo-300 mt-0.5">Admin Dashboard</p>
+  <aside x-show="sidebarOpen" x-cloak
+         class="w-64 bg-brand-900 text-white flex flex-col flex-shrink-0 z-30"
+         style="display: flex">
+    <!-- Logo -->
+    <div class="flex items-center gap-3 px-5 py-4 border-b border-indigo-700">
+      <div class="w-8 h-8 rounded-lg bg-indigo-500 flex items-center justify-center text-white font-bold text-sm shrink-0">5</div>
+      <div>
+        <p class="font-bold text-sm leading-none">Learn 5×5</p>
+        <p class="text-xs text-indigo-300 mt-0.5">Admin Dashboard</p>
+      </div>
     </div>
 
-    <nav class="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-      <a href="/admin/dashboard" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm font-medium">
-        📊 Dashboard
+    <!-- Nav -->
+    <nav class="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+      <a href="/admin/dashboard"
+         class="nav-item {% if active_nav == 'dashboard' %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zm10-3a1 1 0 011-1h4a1 1 0 011 1v7a1 1 0 01-1 1h-4a1 1 0 01-1-1v-7z"/>
+        </svg>
+        Dashboard
       </a>
-      <a href="/admin/users" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm font-medium">
-        👥 Users
+
+      <a href="/admin/users"
+         class="nav-item {% if active_nav == 'users' %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        Users
       </a>
-      <div x-data="{ open: false }">
-        <button @click="open = !open" class="w-full flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm font-medium">
-          📚 Content
-          <svg class="ml-auto w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+
+      <a href="/admin/subscriptions"
+         class="nav-item {% if active_nav == 'subscriptions' %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+        </svg>
+        Subscriptions
+      </a>
+
+      <!-- Content group -->
+      <div x-data="{ open: {{ 'true' if active_nav == 'content' else 'false' }} }">
+        <button @click="open = !open"
+                class="nav-item w-full {% if active_nav == 'content' %}active{% endif %}">
+          <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+          </svg>
+          Content
+          <svg class="ml-auto w-3 h-3 transition-transform" :class="open ? 'rotate-180' : ''"
+               fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
         </button>
-        <div x-show="open" class="ml-4 mt-1 space-y-1">
-          <a href="/admin/content/words" class="block px-3 py-1.5 rounded-lg hover:bg-indigo-700 text-sm">Words</a>
-          <a href="/admin/content/daily-lessons" class="block px-3 py-1.5 rounded-lg hover:bg-indigo-700 text-sm">Daily Lessons</a>
+        <div x-show="open" class="ml-7 mt-1 space-y-0.5">
+          <a href="/admin/content/words"      class="nav-item text-xs">Words</a>
+          <a href="/admin/content/daily-lessons" class="nav-item text-xs">Daily Lessons</a>
         </div>
       </div>
-      <a href="/admin/subscriptions/plans" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm font-medium">
-        💳 Subscriptions
+
+      <a href="/admin/support/tickets"
+         class="nav-item {% if active_nav == 'support' %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/>
+        </svg>
+        Support Tickets
       </a>
-      <a href="/admin/support/tickets" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm font-medium">
-        🎫 Support
+
+      <a href="/admin/notifications"
+         class="nav-item {% if active_nav == 'notifications' %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+        </svg>
+        Notifications
       </a>
-      <a href="/admin/notifications" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm font-medium">
-        🔔 Notifications
-      </a>
-      <a href="/admin/settings" class="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm font-medium">
-        ⚙️ Settings
+
+      <a href="/admin/settings"
+         class="nav-item {% if active_nav == 'settings' %}active{% endif %}">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        Settings
       </a>
     </nav>
 
-    <div class="px-4 py-4 border-t border-indigo-700">
-      <a href="/admin/logout" class="block px-3 py-2 rounded-lg hover:bg-indigo-700 text-sm text-indigo-300">
-        🚪 Logout
+    <!-- Admin user + logout -->
+    <div class="px-3 py-3 border-t border-indigo-700">
+      <div class="flex items-center gap-3 px-3 py-2 mb-1">
+        <div class="w-7 h-7 rounded-full bg-indigo-500 flex items-center justify-center text-xs font-bold shrink-0">
+          {{ (admin_name or 'A')[0]|upper }}
+        </div>
+        <span class="text-sm text-indigo-200 truncate">{{ admin_name or "Admin" }}</span>
+      </div>
+      <a href="/admin/logout" class="nav-item text-red-300 hover:text-red-200 hover:bg-red-900/30">
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+        </svg>
+        Sign out
       </a>
     </div>
   </aside>
 
-  <!-- Main content -->
-  <div class="flex-1 flex flex-col overflow-hidden">
+  <!-- Main -->
+  <div class="flex-1 flex flex-col overflow-hidden min-w-0">
     <!-- Top bar -->
-    <header class="bg-white border-b border-gray-200 px-6 py-4 flex items-center gap-4">
-      <button @click="sidebarOpen = !sidebarOpen" class="text-gray-500 hover:text-gray-700">
-        ☰
+    <header class="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 shrink-0">
+      <button @click="sidebarOpen = !sidebarOpen"
+              class="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
       </button>
-      <div class="ml-auto flex items-center gap-4 text-sm text-gray-600">
+      <div class="text-sm text-gray-500 font-medium">
+        {% block breadcrumb %}{% endblock %}
+      </div>
+      <div class="ml-auto flex items-center gap-3">
         {% block header_actions %}{% endblock %}
       </div>
     </header>
 
     <!-- Page content -->
-    <main class="flex-1 overflow-y-auto p-6">
+    <main class="flex-1 overflow-y-auto p-5 md:p-8">
       {% block content %}{% endblock %}
     </main>
   </div>

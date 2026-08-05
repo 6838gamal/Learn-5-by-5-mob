@@ -1,50 +1,171 @@
 {% extends "base.html" %}
-{% block title %}User {{ user.email }}{% endblock %}
+{% block title %}User{% endblock %}
+{% block breadcrumb %}<a href="/admin/users" class="hover:text-indigo-600">Users</a>
+  <span class="mx-1 text-gray-300">/</span>
+  <span>{{ user.email if user else "Not found" }}</span>
+{% endblock %}
 
 {% block content %}
-<div class="mb-4">
-  <a href="/admin/users" class="text-indigo-600 text-sm hover:underline">← Back to users</a>
+{% if error and not user %}
+<div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-5 py-4 text-sm">{{ error }}</div>
+{% else %}
+
+{% if success %}
+<div class="bg-green-50 border border-green-200 text-green-700 rounded-xl px-5 py-3 mb-4 text-sm">
+  {% if success == "suspended" %}Account has been suspended.
+  {% elif success == "activated" %}Account has been activated.
+  {% else %}Action completed.{% endif %}
 </div>
+{% endif %}
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-  <!-- Profile -->
+
+  <!-- Profile card -->
   <div class="bg-white rounded-xl border border-gray-200 p-6">
-    <h3 class="font-semibold text-gray-700 mb-4">Profile</h3>
+    <div class="flex items-center gap-4 mb-5">
+      <div class="w-12 h-12 rounded-full bg-indigo-100 text-indigo-700 flex items-center
+                  justify-center text-lg font-bold shrink-0">
+        {{ (user.full_name or user.email or '?')[0]|upper }}
+      </div>
+      <div class="min-w-0">
+        <p class="font-semibold text-gray-800 truncate">{{ user.full_name or "—" }}</p>
+        <p class="text-sm text-gray-400 truncate">{{ user.email }}</p>
+      </div>
+    </div>
+
     <dl class="space-y-3 text-sm">
-      <div><dt class="text-gray-500">Email</dt><dd class="font-medium">{{ user.email }}</dd></div>
-      <div><dt class="text-gray-500">Name</dt><dd>{{ user.full_name or "—" }}</dd></div>
-      <div><dt class="text-gray-500">Level</dt><dd class="capitalize">{{ user.level }}</dd></div>
-      <div><dt class="text-gray-500">Timezone</dt><dd>{{ user.timezone or "—" }}</dd></div>
-      <div><dt class="text-gray-500">Verified</dt><dd>{{ "Yes" if user.is_verified else "No" }}</dd></div>
-      <div><dt class="text-gray-500">Status</dt>
+      <div class="flex justify-between">
+        <dt class="text-gray-400">Level</dt>
+        <dd class="font-medium capitalize">{{ user.level or "—" }}</dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-400">Target Language</dt>
+        <dd class="font-medium">{{ user.target_language or user.target_language_id or "—" }}</dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-400">UI Language</dt>
+        <dd class="font-medium">{{ user.ui_language or "—" }}</dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-400">Timezone</dt>
+        <dd class="font-medium">{{ user.timezone or "—" }}</dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-400">Verified</dt>
+        <dd class="font-medium">{{ "Yes" if user.is_verified else "No" }}</dd>
+      </div>
+      <div class="flex justify-between">
+        <dt class="text-gray-400">Status</dt>
         <dd>
-          {% if user.is_active %}
+          {% if user.is_active or user.is_active is none %}
             <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium">Active</span>
           {% else %}
             <span class="bg-red-100 text-red-700 px-2 py-0.5 rounded-full text-xs font-medium">Suspended</span>
           {% endif %}
         </dd>
       </div>
-      <div><dt class="text-gray-500">Joined</dt><dd>{{ user.created_at.strftime('%Y-%m-%d') }}</dd></div>
+      <div class="flex justify-between">
+        <dt class="text-gray-400">Joined</dt>
+        <dd class="font-medium">{{ user.created_at|fmt_date if user.created_at else "—" }}</dd>
+      </div>
     </dl>
 
-    <div class="mt-6 pt-4 border-t border-gray-100 flex gap-2">
-      {% if user.is_active %}
-      <button class="bg-red-50 text-red-600 border border-red-200 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-red-100">
-        Suspend Account
-      </button>
+    <!-- Actions -->
+    <div class="mt-5 pt-4 border-t border-gray-100 flex flex-col gap-2">
+      {% if user.is_active or user.is_active is none %}
+      <form method="post" action="/admin/users/{{ user.id }}/suspend"
+            onsubmit="return confirm('Suspend this account?')">
+        <button type="submit"
+          class="w-full bg-red-50 text-red-600 border border-red-200 px-3 py-2
+                 rounded-lg text-sm font-medium hover:bg-red-100 transition">
+          Suspend Account
+        </button>
+      </form>
       {% else %}
-      <button class="bg-green-50 text-green-600 border border-green-200 px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-green-100">
-        Activate Account
-      </button>
+      <form method="post" action="/admin/users/{{ user.id }}/activate">
+        <button type="submit"
+          class="w-full bg-green-50 text-green-600 border border-green-200 px-3 py-2
+                 rounded-lg text-sm font-medium hover:bg-green-100 transition">
+          Activate Account
+        </button>
+      </form>
       {% endif %}
     </div>
   </div>
 
-  <!-- Stats placeholder -->
-  <div class="bg-white rounded-xl border border-gray-200 p-6 lg:col-span-2">
-    <h3 class="font-semibold text-gray-700 mb-4">Learning Activity</h3>
-    <p class="text-gray-400 text-sm text-center py-12">Activity stats — Phase 2</p>
+  <!-- Right column -->
+  <div class="lg:col-span-2 space-y-5">
+
+    <!-- Subscription -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <h3 class="font-semibold text-gray-700 text-sm mb-4">Subscription</h3>
+      {% if subscription %}
+      <dl class="grid grid-cols-2 gap-4 text-sm">
+        <div>
+          <dt class="text-gray-400 text-xs uppercase tracking-wide mb-1">Plan</dt>
+          <dd class="font-semibold capitalize">
+            {% set plan = subscription.plan_slug or subscription.plan or "free" %}
+            {% if plan == "premium" %}
+              <span class="bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-xs font-medium">Premium</span>
+            {% elif plan == "lifetime" %}
+              <span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full text-xs font-medium">Lifetime</span>
+            {% else %}
+              <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full text-xs">Free</span>
+            {% endif %}
+          </dd>
+        </div>
+        <div>
+          <dt class="text-gray-400 text-xs uppercase tracking-wide mb-1">Status</dt>
+          <dd class="font-medium capitalize">{{ subscription.status or "—" }}</dd>
+        </div>
+        <div>
+          <dt class="text-gray-400 text-xs uppercase tracking-wide mb-1">Start Date</dt>
+          <dd>{{ subscription.start_date|fmt_date if subscription.start_date else "—" }}</dd>
+        </div>
+        <div>
+          <dt class="text-gray-400 text-xs uppercase tracking-wide mb-1">Renewal / Expiry</dt>
+          <dd>{{ (subscription.end_date or subscription.current_period_end)|fmt_date if (subscription.end_date or subscription.current_period_end) else "—" }}</dd>
+        </div>
+        {% if subscription.amount_usd %}
+        <div>
+          <dt class="text-gray-400 text-xs uppercase tracking-wide mb-1">Amount</dt>
+          <dd>{{ subscription.amount_usd|currency }}</dd>
+        </div>
+        {% endif %}
+      </dl>
+      {% else %}
+      <p class="text-sm text-gray-400">No active subscription — Free plan.</p>
+      {% endif %}
+    </div>
+
+    <!-- Learning stats -->
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <h3 class="font-semibold text-gray-700 text-sm mb-4">Learning Activity</h3>
+      {% if stats %}
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
+        <div class="text-center p-3 rounded-lg bg-indigo-50">
+          <p class="text-2xl font-bold text-indigo-600">{{ stats.current_streak or stats.streak or 0 }}</p>
+          <p class="text-xs text-gray-500 mt-1">Day Streak</p>
+        </div>
+        <div class="text-center p-3 rounded-lg bg-green-50">
+          <p class="text-2xl font-bold text-green-600">{{ stats.total_words_learned or stats.words_learned or 0 }}</p>
+          <p class="text-xs text-gray-500 mt-1">Words Learned</p>
+        </div>
+        <div class="text-center p-3 rounded-lg bg-blue-50">
+          <p class="text-2xl font-bold text-blue-600">{{ stats.lessons_completed or 0 }}</p>
+          <p class="text-xs text-gray-500 mt-1">Lessons Done</p>
+        </div>
+        <div class="text-center p-3 rounded-lg bg-purple-50">
+          <p class="text-2xl font-bold text-purple-600">{{ stats.ai_conversations or 0 }}</p>
+          <p class="text-xs text-gray-500 mt-1">AI Sessions</p>
+        </div>
+      </div>
+      {% else %}
+      <p class="text-sm text-gray-400 text-center py-6">No activity data available.</p>
+      {% endif %}
+    </div>
+
   </div>
 </div>
+{% endif %}
 {% endblock %}

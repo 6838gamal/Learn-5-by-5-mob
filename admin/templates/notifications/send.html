@@ -1,31 +1,55 @@
 {% extends "base.html" %}
 {% block title %}Send Notifications{% endblock %}
+{% block breadcrumb %}Notifications{% endblock %}
 
 {% block content %}
-<div class="mb-6">
-  <h2 class="text-2xl font-bold text-gray-800">Send Notifications</h2>
-  <p class="text-gray-500 text-sm mt-1">Send push notifications to users</p>
+<div class="mb-5">
+  <h2 class="text-xl font-bold text-gray-800">Send Notifications</h2>
+  <p class="text-gray-400 text-sm mt-0.5">Broadcast a push notification to your users</p>
 </div>
 
+{% if success %}
+<div class="bg-green-50 border border-green-200 text-green-700 rounded-xl px-5 py-3 mb-5 text-sm flex items-center gap-2">
+  <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+  </svg>
+  Notification sent successfully.
+</div>
+{% endif %}
+
 <div class="bg-white rounded-xl border border-gray-200 p-6 max-w-lg">
-  <form hx-post="/admin/notifications/send" hx-swap="outerHTML">
+  <form method="post" action="/admin/notifications/send">
     <div class="mb-4">
-      <label class="block text-sm font-medium text-gray-700 mb-1">Target</label>
-      <select name="target" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+      <label class="block text-sm font-medium text-gray-700 mb-1.5">Target Audience</label>
+      <select name="target"
+        class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm
+               focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
         <option value="all">All users</option>
-        <option value="premium">Premium users</option>
-        <option value="free">Free users</option>
+        <option value="premium">Premium subscribers</option>
+        <option value="free">Free plan users</option>
+        <option value="inactive">Inactive users (7+ days)</option>
       </select>
     </div>
+
     <div class="mb-4">
-      <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
-      <input type="text" name="title" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" />
+      <label class="block text-sm font-medium text-gray-700 mb-1.5">Notification Title</label>
+      <input type="text" name="title" required maxlength="100"
+        placeholder="e.g. Your daily lesson is ready!"
+        class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm
+               focus:outline-none focus:ring-2 focus:ring-indigo-500" />
     </div>
+
     <div class="mb-6">
-      <label class="block text-sm font-medium text-gray-700 mb-1">Body</label>
-      <textarea name="body" rows="4" required class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"></textarea>
+      <label class="block text-sm font-medium text-gray-700 mb-1.5">Message Body</label>
+      <textarea name="body" rows="4" required maxlength="300"
+        placeholder="Keep it short and motivating…"
+        class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm
+               focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"></textarea>
+      <p class="text-xs text-gray-400 mt-1">Max 300 characters</p>
     </div>
-    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+
+    <button type="submit"
+      class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition">
       Send Notification
     </button>
   </form>

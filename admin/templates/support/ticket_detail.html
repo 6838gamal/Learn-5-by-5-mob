@@ -1,50 +1,71 @@
 {% extends "base.html" %}
-{% block title %}Ticket #{{ ticket.id[:8] }}{% endblock %}
+{% block title %}Ticket{% endblock %}
+{% block breadcrumb %}
+  <a href="/admin/support/tickets" class="hover:text-indigo-600">Support Tickets</a>
+  <span class="mx-1 text-gray-300">/</span>
+  <span>{{ ticket.subject[:40] if ticket else "Not found" }}{% if ticket and ticket.subject|length > 40 %}…{% endif %}</span>
+{% endblock %}
 
 {% block content %}
-<div class="mb-4">
-  <a href="/admin/support/tickets" class="text-indigo-600 text-sm hover:underline">← Back to tickets</a>
-</div>
+{% if error and not ticket %}
+<div class="bg-red-50 border border-red-200 text-red-700 rounded-xl px-5 py-4 text-sm">{{ error }}</div>
+{% else %}
 
-<div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-  <div class="flex items-start justify-between">
+<!-- Ticket header -->
+<div class="bg-white rounded-xl border border-gray-200 p-5 mb-5">
+  <div class="flex items-start justify-between gap-4">
     <div>
-      <h2 class="text-xl font-bold text-gray-800">{{ ticket.subject }}</h2>
-      <p class="text-sm text-gray-500 mt-1">Category: {{ ticket.category or "—" }} · Priority: {{ ticket.priority }}</p>
+      <h2 class="text-lg font-bold text-gray-800">{{ ticket.subject }}</h2>
+      <p class="text-sm text-gray-400 mt-1">
+        {% if ticket.category %}Category: {{ ticket.category }} · {% endif %}
+        Priority: {{ ticket.priority|title if ticket.priority else "Normal" }} ·
+        Opened: {{ ticket.created_at|fmt_datetime if ticket.created_at else "—" }}
+      </p>
     </div>
-    <span class="px-3 py-1 rounded-full text-sm font-medium
+    <span class="px-3 py-1 rounded-full text-sm font-medium shrink-0
       {% if ticket.status == 'open' %}bg-yellow-100 text-yellow-700
       {% elif ticket.status == 'in_progress' %}bg-blue-100 text-blue-700
+      {% elif ticket.status == 'closed' %}bg-gray-100 text-gray-500
       {% else %}bg-gray-100 text-gray-600{% endif %}">
-      {{ ticket.status.replace('_', ' ').title() }}
+      {{ (ticket.status or "open").replace('_', ' ')|title }}
     </span>
   </div>
 </div>
 
 <!-- Message thread -->
-<div class="space-y-4 mb-6">
+<div class="space-y-3 mb-5">
   {% for msg in messages %}
   <div class="flex {% if msg.sender_type == 'admin' %}justify-end{% endif %}">
-    <div class="max-w-2xl {% if msg.sender_type == 'admin' %}bg-indigo-50 border-indigo-100{% else %}bg-white border-gray-200{% endif %} border rounded-xl px-4 py-3">
-      <p class="text-xs font-medium {% if msg.sender_type == 'admin' %}text-indigo-600{% else %}text-gray-500{% endif %} mb-1">
-        {{ "Admin" if msg.sender_type == "admin" else "User" }} · {{ msg.created_at.strftime('%Y-%m-%d %H:%M') }}
+    <div class="max-w-2xl {% if msg.sender_type == 'admin' %}bg-indigo-50 border-indigo-100
+                          {% else %}bg-white border-gray-200{% endif %} border rounded-xl px-4 py-3">
+      <p class="text-xs font-medium mb-1
+        {% if msg.sender_type == 'admin' %}text-indigo-600{% else %}text-gray-400{% endif %}">
+        {{ "Admin" if msg.sender_type == "admin" else "User" }} ·
+        {{ msg.created_at|fmt_datetime if msg.created_at else "—" }}
       </p>
-      <p class="text-sm text-gray-800">{{ msg.content }}</p>
+      <p class="text-sm text-gray-800 whitespace-pre-wrap">{{ msg.content or msg.message or "" }}</p>
     </div>
+  </div>
+  {% else %}
+  <div class="text-center text-gray-400 text-sm py-8 bg-white rounded-xl border border-gray-200">
+    No messages yet.
   </div>
   {% endfor %}
 </div>
 
 <!-- Reply form -->
-<div class="bg-white rounded-xl border border-gray-200 p-6">
-  <h3 class="font-semibold text-gray-700 mb-3">Reply</h3>
+<div class="bg-white rounded-xl border border-gray-200 p-5">
+  <h3 class="font-semibold text-gray-700 text-sm mb-3">Reply to User</h3>
   <form method="post" action="/admin/support/tickets/{{ ticket.id }}/reply">
     <textarea name="content" rows="4" required
-      class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-3"
-      placeholder="Type your reply..."></textarea>
-    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium">
+      class="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm
+             focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-3 resize-none"
+      placeholder="Type your reply…"></textarea>
+    <button type="submit"
+      class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-lg text-sm font-medium transition">
       Send Reply
     </button>
   </form>
 </div>
+{% endif %}
 {% endblock %}
