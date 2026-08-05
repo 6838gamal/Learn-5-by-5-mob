@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+{% block title %}AI Tutor — Learn 5×5{% endblock %}
+
+{% block head %}
+<style>
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  .msg-in { animation: fadeUp .25s ease; }
+  @keyframes pulse-ring { 0%,100%{transform:scale(1);opacity:.7} 50%{transform:scale(1.2);opacity:.4} }
+  .recording-ring { animation: pulse-ring 1s ease-in-out infinite; }
+  @keyframes eq-bar { 0%,100%{height:4px} 50%{height:16px} }
+  .eq-bar:nth-child(1){animation:eq-bar .6s .0s ease-in-out infinite}
+  .eq-bar:nth-child(2){animation:eq-bar .6s .1s ease-in-out infinite}
+  .eq-bar:nth-child(3){animation:eq-bar .6s .2s ease-in-out infinite}
+  .eq-bar:nth-child(4){animation:eq-bar .6s .1s ease-in-out infinite}
+  .eq-bar:nth-child(5){animation:eq-bar .6s .0s ease-in-out infinite}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto flex flex-col" x-data="chatApp({{ language_id or 0 }})" x-init="init()" style="height: calc(100vh - 6rem);">
+
+  <!-- Header -->
+  <div class="flex items-center gap-3 mb-4 shrink-0">
+    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-lg shrink-0">🤖</div>
+    <div>
+      <h1 class="text-lg font-bold text-gray-900 dark:text-white">AI Language Tutor</h1>
+      <p class="text-xs text-gray-500 dark:text-gray-400">Speak to practice — your tutor listens and corrects</p>
+    </div>
+    <button @click="newSession()" class="ml-auto btn-secondary text-xs px-3 py-1.5">+ New session</button>
+  </div>
+
+  <!-- Messages -->
+  <div id="messages" class="flex-1 overflow-y-auto space-y-4 pb-2 pr-1">
+
+    <!-- Welcome -->
+    <div x-show="messages.length === 0 && !starting" class="flex flex-col items-center justify-center h-full text-center px-6">
+      <div class="text-5xl mb-4">🎙️</div>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Voice conversation practice</h2>
+      <p class="text-sm text-gray-500 dark:text-gray-400 mb-6 max-w-sm">
+        Tap <strong>Start session</strong>, then use the microphone button to speak.
+        Your AI tutor will respond, transcribe what you said, and correct any mistakes.
+      </p>
+      <button @click="startSession()" :disabled="starting" class="btn-primary px-6 py-3">
+        <span x-show="!starting">Start session</span>
+        <span x-show="starting">Starting…</span>
+      </button>
+    </div>
+
+    <!-- Starting spinner -->
+    <div x-show="starting" x-cloak class="flex items-center justify-center h-full">
+      <div class="flex flex-col items-center gap-3 text-gray-500 dark:text-gray-400">
+        <svg class="w-8 h-8 animate-spin text-brand-500" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+        </svg>
+        <span class="text-sm">Starting conversation…</span>
+      </div>
+    </div>
+
+    <!-- Message list -->
+    <template x-for="(msg, i) in messages" :key="i">
+      <div class="msg-in">
+        <!-- User audio turn -->
+        <template x-if="msg.role === 'user'">
+          <div class="flex justify-end gap-2">
+            <div class="max-w-[80%] space-y-1">
+              <div class="bg-brand-600 text-white rounded-2xl rounded-br-sm px-4 py-3 text-sm leading-relaxed">
+                <p class="text-xs text-brand-200 mb-1">You said:</p>
+                <p x-text="msg.content"></p>
+              </div>
+            </div>
+          </div>
+        </template>
+
+        <!-- AI response turn -->
+        <template x-if="msg.role === 'assistant'">
+          <div class="flex justify-start gap-2">
+            <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center text-white text-xs shrink-0 mt-1">🤖</div>
+            <div class="max-w-[80%] space-y-2">
+              <div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
+                <p class="text-sm leading-relaxed text-gray-800 dark:text-gray-200" x-text="msg.content"></p>
+              </div>
+              <!-- Corrections -->
+              <template x-if="msg.corrections && msg.corrections.length > 0">
+                <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl px-4 py-3">
+                  <p class="text-xs font-semibold text-amber-700 dark:text-amber-400 mb-2">✏️ Corrections</p>
+                  <template x-for="(c, ci) in msg.corrections" :key="ci">
+                    <div class="text-xs mb-1">
+                      <span class="line-through text-red-500" x-text="c.original"></span>
+                      <span class="text-gray-400 mx-1">→</span>
+                      <span class="text-brand-600 dark:text-brand-400 font-medium" x-text="c.corrected"></span>
+                      <span class="text-gray-400 ml-1" x-show="c.explanation" x-text="'(' + c.explanation + ')'"></span>
+                    </div>
+                  </template>
+                </div>
+              </template>
+            </div>
+          </div>
+        </template>
+      </div>
+    </template>
+  </div>
+
+  <!-- Error -->
+  <div x-show="error" x-cloak class="shrink-0 mb-2 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 text-red-600 dark:text-red-400 text-xs" x-text="error"></div>
+
+  <!-- Recording controls (only shown once a session is active) -->
+  <div x-show="conversationId" x-cloak class="shrink-0 mt-2">
+    <div class="flex items-center gap-4 justify-center p-4">
+
+      <!-- Idle: tap to record -->
+      <div x-show="!recording && !processing" class="flex flex-col items-center gap-2">
+        <div class="relative">
+          <button @click="startRecording()"
+                  class="w-16 h-16 rounded-full bg-brand-600 hover:bg-brand-700 active:scale-95 transition-all shadow-lg flex items-center justify-center text-white">
+            <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/></svg>
+          </button>
+        </div>
+        <p class="text-xs text-gray-500 dark:text-gray-400">Tap to speak</p>
+      </div>
+
+      <!-- Recording: animated ring + stop button -->
+      <div x-show="recording" x-cloak class="flex flex-col items-center gap-2">
+        <div class="relative flex items-center justify-center">
+          <div class="recording-ring absolute w-20 h-20 rounded-full border-4 border-red-400 opacity-60"></div>
+          <button @click="stopRecording()"
+                  class="w-16 h-16 rounded-full bg-red-500 hover:bg-red-600 active:scale-95 transition-all shadow-lg flex items-center justify-center text-white">
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
+          </button>
+        </div>
+        <!-- EQ bars -->
+        <div class="flex items-end gap-0.5 h-5">
+          <div class="eq-bar w-1 bg-red-400 rounded-full"></div>
+          <div class="eq-bar w-1 bg-red-400 rounded-full"></div>
+          <div class="eq-bar w-1 bg-red-400 rounded-full"></div>
+          <div class="eq-bar w-1 bg-red-400 rounded-full"></div>
+          <div class="eq-bar w-1 bg-red-400 rounded-full"></div>
+        </div>
+        <p class="text-xs text-red-500 font-medium">Recording… tap to stop</p>
+      </div>
+
+      <!-- Processing spinner -->
+      <div x-show="processing" x-cloak class="flex flex-col items-center gap-2">
+        <div class="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+          <svg class="w-6 h-6 animate-spin text-brand-500" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+          </svg>
+        </div>
+        <p class="text-xs text-gray-500 dark:text-gray-400">Processing…</p>
+      </div>
+
+      <!-- End session button -->
+      <button x-show="conversationId && !recording && !processing" x-cloak
+              @click="endSession()"
+              class="absolute right-4 btn-secondary text-xs">
+        End session
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function chatApp(languageId) {
+  return {
+    languageId,
+    conversationId: null,
+    messages: [],
+    recording: false,
+    processing: false,
+    starting: false,
+    error: '',
+    mediaRecorder: null,
+    audioChunks: [],
+
+    init() {},
+
+    async startSession() {
+      this.starting = true;
+      this.error = '';
+      try {
+        const res = await fetch('/ai-chat/start', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ language_id: this.languageId }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to start session');
+        const payload = (data.data || data);
+        this.conversationId = payload.conversation_id || payload.id;
+        this.messages = [{
+          role: 'assistant',
+          content: 'Hello! I\'m your AI language tutor. Tap the microphone and start speaking — I\'ll help you practice and correct any mistakes.',
+          corrections: [],
+        }];
+        this.$nextTick(() => this.scrollDown());
+      } catch (e) {
+        this.error = e.message;
+      } finally {
+        this.starting = false;
+      }
+    },
+
+    async newSession() {
+      if (this.conversationId) await this.endSession();
+      this.messages = [];
+      this.conversationId = null;
+      this.error = '';
+    },
+
+    async startRecording() {
+      this.error = '';
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        this.audioChunks = [];
+        this.mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+        this.mediaRecorder.ondataavailable = (e) => {
+          if (e.data.size > 0) this.audioChunks.push(e.data);
+        };
+        this.mediaRecorder.onstop = () => this.sendAudio(stream);
+        this.mediaRecorder.start();
+        this.recording = true;
+      } catch (e) {
+        this.error = 'Microphone access denied. Please allow microphone access and try again.';
+      }
+    },
+
+    stopRecording() {
+      if (this.mediaRecorder && this.recording) {
+        this.mediaRecorder.stop();
+        this.recording = false;
+      }
+    },
+
+    async sendAudio(stream) {
+      this.processing = true;
+      try {
+        const blob = new Blob(this.audioChunks, { type: 'audio/webm' });
+        const form = new FormData();
+        form.append('audio', blob, 'recording.webm');
+
+        const res = await fetch(`/ai-chat/${this.conversationId}/message`, {
+          method: 'POST',
+          body: form,
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to process audio');
+
+        const payload = data.data || data;
+        // Add user message (what was transcribed)
+        if (payload.user_transcript) {
+          this.messages.push({ role: 'user', content: payload.user_transcript });
+        }
+        // Add AI response
+        if (payload.ai_text) {
+          this.messages.push({
+            role: 'assistant',
+            content: payload.ai_text,
+            corrections: payload.corrections || [],
+          });
+        }
+      } catch (e) {
+        this.error = e.message;
+      } finally {
+        this.processing = false;
+        // Stop all tracks
+        stream.getTracks().forEach(t => t.stop());
+        this.$nextTick(() => this.scrollDown());
+      }
+    },
+
+    async endSession() {
+      if (!this.conversationId) return;
+      try {
+        await fetch(`/ai-chat/${this.conversationId}/end`, { method: 'POST' });
+      } catch (_) {}
+      this.conversationId = null;
+    },
+
+    scrollDown() {
+      const el = document.getElementById('messages');
+      if (el) el.scrollTop = el.scrollHeight;
+    },
+  }
+}
+</script>
+{% endblock %}

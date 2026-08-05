@@ -1,7 +1,7 @@
 """Learn 5 by 5 — FastAPI web app entry point."""
 
 from fastapi import FastAPI, Request
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -40,8 +40,21 @@ app.include_router(support.router,      prefix="/support",       tags=["support"
 app.include_router(notifications.router,prefix="/notifications", tags=["notifications"])
 
 
+# ── Splash screen ─────────────────────────────────────────────────────────────
+templates = Jinja2Templates(directory="app/templates")
+
+@app.get("/splash", response_class=HTMLResponse)
+async def splash(request: Request):
+    if request.session.get("access_token"):
+        redirect_url = "/home"
+    else:
+        redirect_url = "/auth/login"
+    return templates.TemplateResponse(request, "splash.html", {
+        "redirect_url": redirect_url,
+    })
+
+
+# ── Root redirect ─────────────────────────────────────────────────────────────
 @app.get("/")
 async def root(request: Request):
-    if request.session.get("access_token"):
-        return RedirectResponse("/home")
-    return RedirectResponse("/auth/login")
+    return RedirectResponse("/splash")

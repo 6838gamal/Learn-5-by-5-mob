@@ -28,8 +28,7 @@ async def lesson_page(
     finally:
         await client.aclose()
 
-    return templates.TemplateResponse("lesson.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "lesson.html", {
         "lesson": lesson,
         "error": error,
     })

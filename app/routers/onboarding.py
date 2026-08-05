@@ -31,8 +31,7 @@ async def onboarding_page(
     finally:
         await client.aclose()
 
-    return templates.TemplateResponse("onboarding.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "onboarding.html", {
         "languages": languages,
         "error": None,
     })
@@ -58,8 +57,7 @@ async def onboarding_submit(
     except ApiError as e:
         lang_resp = await client.get("/languages/")
         languages = lang_resp.get("data", lang_resp) if isinstance(lang_resp, dict) else lang_resp
-        return templates.TemplateResponse("onboarding.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "onboarding.html", {
             "languages": languages,
             "error": e.detail,
         }, status_code=400)

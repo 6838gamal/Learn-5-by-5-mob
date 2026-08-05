@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Subscription — Learn 5×5{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+
+  <div class="flex items-center gap-3">
+    <a href="/profile" class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    </a>
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Plans &amp; Subscription</h1>
+  </div>
+
+  {% if error %}
+  <div class="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-400 text-sm">⚠ {{ error }}</div>
+  {% endif %}
+  {% if success %}
+  <div class="p-3 rounded-xl bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800 text-brand-700 dark:text-brand-400 text-sm">✅ Subscription updated.</div>
+  {% endif %}
+
+  <!-- Current plan banner -->
+  {% if current %}
+  <div class="card p-5 flex items-center gap-4 border-l-4
+    {% if (current.plan or current.slug) == 'premium' %}border-purple-500
+    {% elif (current.plan or current.slug) == 'lifetime' %}border-amber-500
+    {% else %}border-gray-300{% endif %}">
+    <div class="text-3xl">
+      {% if (current.plan or current.slug) == 'premium' %}💜
+      {% elif (current.plan or current.slug) == 'lifetime' %}⭐
+      {% else %}🎯{% endif %}
+    </div>
+    <div class="flex-1">
+      <p class="font-bold text-gray-900 dark:text-white">
+        Current plan: <span class="capitalize">{{ current.plan or current.slug or 'Free' }}</span>
+      </p>
+      {% if current.expires_at %}
+      <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Renews {{ current.expires_at[:10] }}</p>
+      {% endif %}
+    </div>
+    {% if (current.plan or current.slug) not in ('free', None) %}
+    <form action="/subscription/cancel" method="post">
+      <button type="submit" onclick="return confirm('Cancel your subscription?')"
+              class="text-xs text-red-500 hover:underline">Cancel</button>
+    </form>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Plan cards -->
+  {% if plans %}
+  <div class="grid md:grid-cols-3 gap-4">
+    {% for plan in plans %}
+    {% set is_current = current and (current.plan or current.slug) == (plan.slug or plan.id) %}
+    <div class="card p-6 flex flex-col
+      {% if plan.slug == 'premium' or plan.id == 'premium' %}ring-2 ring-purple-500{% endif %}
+      {% if plan.slug == 'lifetime' or plan.id == 'lifetime' %}ring-2 ring-amber-500{% endif %}">
+
+      {% if plan.slug == 'premium' or plan.id == 'premium' %}
+      <div class="text-xs font-bold text-purple-600 dark:text-purple-400 uppercase tracking-wide mb-2">Most popular</div>
+      {% endif %}
+
+      <p class="text-lg font-black text-gray-900 dark:text-white capitalize">{{ plan.name or plan.slug or plan.id }}</p>
+      <p class="text-3xl font-black mt-2 mb-1
+        {% if plan.slug == 'premium' %}text-purple-600 dark:text-purple-400
+        {% elif plan.slug == 'lifetime' %}text-amber-600 dark:text-amber-400
+        {% else %}text-gray-900 dark:text-white{% endif %}">
+        {% if (plan.price or 0) == 0 %}Free
+        {% else %}${{ "%.0f"|format(plan.price) }}<span class="text-sm font-medium text-gray-400">{% if plan.interval %}/{{ plan.interval }}{% endif %}</span>
+        {% endif %}
+      </p>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">{{ plan.description or '' }}</p>
+
+      {% if plan.features %}
+      <ul class="space-y-1.5 mb-5 flex-1">
+        {% for feat in plan.features %}
+        <li class="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300">
+          <svg class="w-4 h-4 text-brand-500 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+          {{ feat }}
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <div class="flex-1"></div>
+      {% endif %}
+
+      {% if is_current %}
+      <button disabled class="btn-secondary w-full justify-center opacity-60 cursor-not-allowed">Current plan</button>
+      {% elif (plan.price or 0) == 0 %}
+      <button disabled class="btn-secondary w-full justify-center opacity-60 cursor-not-allowed">Free</button>
+      {% else %}
+      <button onclick="checkout('{{ plan.id or plan.slug }}')"
+              class="btn-primary w-full justify-center
+                {% if plan.slug == 'premium' %}bg-purple-600 hover:bg-purple-700
+                {% elif plan.slug == 'lifetime' %}bg-amber-600 hover:bg-amber-700{% endif %}">
+        Upgrade
+      </button>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card p-8 text-center text-gray-500 dark:text-gray-400">
+    <p class="text-sm">Plan information is currently unavailable. Please try again later.</p>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+async function checkout(planId) {
+  try {
+    const res = await fetch('/subscription/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plan_id: planId })
+    });
+    const data = await res.json();
+    const url = (data.data || data).checkout_url || (data.data || data).url;
+    if (url) window.location.href = url;
+    else alert('Checkout not available. Please try again later.');
+  } catch(e) {
+    alert('Could not initiate checkout.');
+  }
+}
+</script>
+{% endblock %}

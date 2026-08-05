@@ -19,7 +19,9 @@ async def tickets_list(
 ):
     try:
         resp = await client.get("/support/tickets")
-        tickets = resp.get("data", resp) if isinstance(resp, dict) else resp
+        # Response: {"success": true, "data": {"tickets": [...]}}
+        data = resp.get("data", {}) if isinstance(resp, dict) else {}
+        tickets = data.get("tickets", []) if isinstance(data, dict) else []
     except ApiError as e:
         tickets = []
         error = e.detail
@@ -28,8 +30,7 @@ async def tickets_list(
     finally:
         await client.aclose()
 
-    return templates.TemplateResponse("support/tickets.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "support/tickets.html", {
         "tickets": tickets,
         "error": error,
     })
@@ -39,19 +40,19 @@ async def tickets_list(
 async def create_ticket(
     request: Request,
     subject: str = Form(...),
-    message: str = Form(...),
+    description: str = Form(...),  # backend field is "description", not "message"
     client: ApiClient = Depends(get_api_client),
     _auth=Depends(require_auth),
 ):
     try:
-        resp = await client.post("/support/tickets", json={"subject": subject, "message": message})
-        ticket_id = resp.get("data", {}).get("id") if isinstance(resp, dict) else None
+        resp = await client.post("/support/tickets", json={"subject": subject, "description": description})
+        # Response: {"success": true, "data": {"ticket_id": "...", "status": "..."}}
+        ticket_id = resp.get("data", {}).get("ticket_id") if isinstance(resp, dict) else None
         if ticket_id:
             return RedirectResponse(f"/support/{ticket_id}", status_code=303)
         return RedirectResponse("/support", status_code=303)
     except ApiError as e:
-        return templates.TemplateResponse("support/tickets.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "support/tickets.html", {
             "tickets": [],
             "error": e.detail,
         }, status_code=400)
@@ -68,18 +69,22 @@ async def ticket_detail(
 ):
     try:
         resp = await client.get(f"/support/tickets/{ticket_id}")
-        ticket = resp.get("data", resp)
+        # Response: {"success": true, "data": {"ticket": {...}, "messages": [...]}}
+        data = resp.get("data", {}) if isinstance(resp, dict) else {}
+        ticket = data.get("ticket") if isinstance(data, dict) else None
+        messages = data.get("messages", []) if isinstance(data, dict) else []
     except ApiError as e:
         ticket = None
+        messages = []
         error = e.detail
     else:
         error = None
     finally:
         await client.aclose()
 
-    return templates.TemplateResponse("support/ticket_detail.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "support/ticket_detail.html", {
         "ticket": ticket,
+        "messages": messages,
         "error": error,
     })
 

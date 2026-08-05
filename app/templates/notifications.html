@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Notifications — Learn 5×5{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-4">
+
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Notifications</h1>
+    {% if notifications %}
+    <button onclick="markAllRead()" class="text-sm text-brand-600 dark:text-brand-400 hover:underline font-medium">Mark all read</button>
+    {% endif %}
+  </div>
+
+  {% if error %}
+  <div class="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-300 text-sm">⚠ {{ error }}</div>
+  {% endif %}
+
+  {% if not notifications %}
+  <div class="card p-10 text-center">
+    <div class="text-5xl mb-4">🔔</div>
+    <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">All caught up!</h2>
+    <p class="text-sm text-gray-500 dark:text-gray-400">No notifications right now. Check back later.</p>
+  </div>
+  {% else %}
+  <div class="card divide-y divide-gray-100 dark:divide-gray-700 overflow-hidden">
+    {% for notif in notifications %}
+    <div class="flex items-start gap-4 px-5 py-4
+         {% if not notif.is_read %}bg-brand-50/40 dark:bg-brand-900/10{% endif %}
+         hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+         id="notif-{{ notif.id }}">
+
+      <!-- Icon -->
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center text-lg shrink-0 mt-0.5
+        {% if notif.type == 'streak' %}bg-orange-100 dark:bg-orange-900/30
+        {% elif notif.type == 'lesson' %}bg-brand-100 dark:bg-brand-900/30
+        {% elif notif.type == 'review' %}bg-purple-100 dark:bg-purple-900/30
+        {% else %}bg-gray-100 dark:bg-gray-700{% endif %}">
+        {% if notif.type == 'streak' %}🔥
+        {% elif notif.type == 'lesson' %}📖
+        {% elif notif.type == 'review' %}🔁
+        {% elif notif.type == 'quiz' %}📝
+        {% else %}💬{% endif %}
+      </div>
+
+      <!-- Content -->
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-semibold text-gray-900 dark:text-white">{{ notif.title or notif.type or 'Notification' }}</p>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{{ notif.message or notif.body or '' }}</p>
+        {% if notif.created_at %}
+        <p class="text-xs text-gray-300 dark:text-gray-600 mt-1">{{ notif.created_at[:16].replace('T',' ') }}</p>
+        {% endif %}
+      </div>
+
+      <!-- Unread dot / mark read -->
+      {% if not notif.is_read %}
+      <button onclick="markRead('{{ notif.id }}')" title="Mark as read"
+              class="w-2.5 h-2.5 rounded-full bg-brand-500 shrink-0 mt-2 hover:bg-brand-700 transition-colors"></button>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+async function markRead(id) {
+  try {
+    await fetch(`/notifications/${id}/read`, { method: 'POST' });
+    const el = document.getElementById(`notif-${id}`);
+    if (el) { el.classList.remove('bg-brand-50/40','dark:bg-brand-900/10'); }
+    const dot = el && el.querySelector('button[onclick]');
+    if (dot) dot.remove();
+  } catch(_) {}
+}
+
+async function markAllRead() {
+  try {
+    await fetch('/notifications/read-all', { method: 'POST' });
+    location.reload();
+  } catch(_) {}
+}
+</script>
+{% endblock %}

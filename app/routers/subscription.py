@@ -32,8 +32,7 @@ async def subscription_page(
 
     await client.aclose()
 
-    return templates.TemplateResponse("profile/subscription.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "profile/subscription.html", {
         "plans": plans,
         "current": current,
         "error": request.query_params.get("error"),

@@ -25,8 +25,7 @@ async def profile_page(
     finally:
         await client.aclose()
 
-    return templates.TemplateResponse("profile/index.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "profile/index.html", {
         "user": user,
         "success": request.query_params.get("success"),
         "error": None,
@@ -45,8 +44,7 @@ async def update_profile(
         return RedirectResponse("/profile?success=1", status_code=303)
     except ApiError as e:
         user = {}
-        return templates.TemplateResponse("profile/index.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "profile/index.html", {
             "user": {"full_name": full_name},
             "success": None,
             "error": e.detail,
@@ -62,8 +60,7 @@ async def settings_page(
 ):
     theme = request.session.get("theme", "light")
     locale = request.session.get("locale", "en")
-    return templates.TemplateResponse("profile/settings.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "profile/settings.html", {
         "theme": theme,
         "locale": locale,
         "success": request.query_params.get("success"),
@@ -97,8 +94,7 @@ async def change_password(
         })
         return RedirectResponse("/profile?success=1", status_code=303)
     except ApiError as e:
-        return templates.TemplateResponse("profile/index.html", {
-            "request": request,
+        return templates.TemplateResponse(request, "profile/index.html", {
             "user": {},
             "success": None,
             "error": e.detail,

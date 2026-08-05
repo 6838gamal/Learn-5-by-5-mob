@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}Today's Lesson — Learn 5×5{% endblock %}
+
+{% block head %}
+<style>
+  @keyframes slideIn { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .slide-in { animation: slideIn .35s ease both; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto" x-data="lessonApp()" x-init="init()">
+
+  <!-- Error state -->
+  {% if error and not lesson %}
+  <div class="card p-8 text-center">
+    <div class="text-4xl mb-4">⚠️</div>
+    <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Lesson unavailable</h2>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">{{ error }}</p>
+    <a href="/home" class="btn-primary">← Back to home</a>
+  </div>
+
+  <!-- No words state -->
+  {% elif not lesson or not lesson.words %}
+  <div class="card p-8 text-center">
+    <div class="text-5xl mb-4">📭</div>
+    <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">No lesson today</h2>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">Come back tomorrow for 5 fresh words!</p>
+    <a href="/home" class="btn-primary">← Back to home</a>
+  </div>
+
+  <!-- Lesson completed state (server-side) -->
+  {% elif lesson.completed %}
+  <div class="card p-10 text-center space-y-4">
+    <div class="text-6xl">🎉</div>
+    <h2 class="text-2xl font-black text-gray-900 dark:text-white">Lesson complete!</h2>
+    <p class="text-gray-500 dark:text-gray-400">You've learned all 5 words for today.</p>
+    <div class="flex gap-3 justify-center mt-6 flex-wrap">
+      <a href="/review" class="btn-primary">Review flashcards</a>
+      <a href="/quiz"   class="btn-secondary">Take a quiz</a>
+    </div>
+  </div>
+
+  <!-- Active lesson -->
+  {% else %}
+  <!-- Progress header -->
+  <div class="mb-6">
+    <div class="flex items-center justify-between mb-2">
+      <h1 class="text-xl font-bold text-gray-900 dark:text-white">Today's Lesson</h1>
+      <span class="text-sm text-gray-500 dark:text-gray-400" x-text="`${currentIndex + 1} / ${words.length}`"></span>
+    </div>
+    <div class="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+      <div class="h-full bg-brand-500 rounded-full transition-all duration-500"
+           :style="`width: ${progress}%`"></div>
+    </div>
+  </div>
+
+  <!-- Word card -->
+  <div class="slide-in card p-8 md:p-10 text-center space-y-4">
+
+    <!-- Step badge -->
+    <div class="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400 mb-2" x-text="stepLabel"></div>
+
+    <!-- The word -->
+    <div>
+      <p class="text-4xl font-black text-gray-900 dark:text-white tracking-tight" x-text="currentWord.word"></p>
+      <!-- phonetic / pronunciation from API -->
+      <p class="text-sm text-gray-400 dark:text-gray-500 mt-1 font-mono" x-text="currentWord.phonetic || ''"></p>
+    </div>
+
+    <!-- Translation (from translations[0].meaning) -->
+    <div x-show="phase >= 1">
+      <p class="text-lg font-semibold text-brand-600 dark:text-brand-400"
+         x-text="(currentWord.translations && currentWord.translations[0]) ? currentWord.translations[0].meaning : '—'"></p>
+    </div>
+
+    <!-- Example sentence (from examples[0].sentence + translation) -->
+    <div x-show="phase >= 2" class="mt-2 p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-left">
+      <p class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wide mb-1">Example</p>
+      <p class="text-sm text-gray-700 dark:text-gray-300 italic"
+         x-text="(currentWord.examples && currentWord.examples[0]) ? currentWord.examples[0].sentence : '—'"></p>
+      <p class="text-xs text-gray-400 dark:text-gray-500 mt-1"
+         x-show="currentWord.examples && currentWord.examples[0] && currentWord.examples[0].translation"
+         x-text="(currentWord.examples && currentWord.examples[0]) ? currentWord.examples[0].translation : ''"></p>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="pt-4 space-y-3">
+      <button x-show="phase === 0" @click="phase = 1"
+              class="btn-primary w-full justify-center text-base py-3">
+        Reveal meaning
+      </button>
+      <button x-show="phase === 1" @click="phase = 2"
+              class="btn-secondary w-full justify-center text-base py-3">
+        Show example sentence
+      </button>
+      <div x-show="phase === 2" class="flex gap-3">
+        <button @click="rate('hard')"
+                class="flex-1 py-3 rounded-xl border-2 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 font-semibold text-sm hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+          😕 Tricky
+        </button>
+        <button @click="rate('easy')"
+                class="flex-1 py-3 rounded-xl border-2 border-brand-200 dark:border-brand-800 text-brand-700 dark:text-brand-400 font-semibold text-sm hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors">
+          ✅ Got it
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lesson complete (JS-triggered) -->
+  <div x-show="done" x-cloak class="card p-10 text-center space-y-4 mt-6">
+    <div class="text-6xl">🎉</div>
+    <h2 class="text-2xl font-black text-gray-900 dark:text-white">All done!</h2>
+    <p class="text-gray-500 dark:text-gray-400">You studied all 5 words. Great work!</p>
+    <div class="flex gap-3 justify-center mt-6 flex-wrap">
+      <a href="/review" class="btn-primary">Review flashcards</a>
+      <a href="/quiz"   class="btn-secondary">Take a quiz</a>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+
+<script>
+// lesson data is embedded safely via server-side JSON encoding
+const LESSON_DATA = {{ lesson | tojson if lesson else 'null' }};
+
+function lessonApp() {
+  return {
+    lesson: LESSON_DATA,
+    words: LESSON_DATA ? (LESSON_DATA.words || []) : [],
+    currentIndex: 0,
+    phase: 0,
+    done: false,
+
+    get currentWord() { return this.words[this.currentIndex] || {}; },
+    get progress() {
+      return this.words.length ? Math.round((this.currentIndex / this.words.length) * 100) : 0;
+    },
+    get stepLabel() {
+      return ['Read the word', 'Translation', 'Example & context'][this.phase] || 'Done';
+    },
+
+    init() {},
+
+    async rate(quality) {
+      const word = this.currentWord;
+      try {
+        await fetch('/lesson/progress', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ word_id: word.id, quality, step: this.currentIndex + 1 })
+        });
+      } catch (_) {}
+
+      if (this.currentIndex < this.words.length - 1) {
+        this.currentIndex++;
+        this.phase = 0;
+      } else {
+        this.done = true;
+      }
+    }
+  }
+}
+</script>
+{% endblock %}

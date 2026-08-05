@@ -19,7 +19,9 @@ async def notifications_page(
 ):
     try:
         resp = await client.get("/notifications/")
-        items = resp.get("data", resp) if isinstance(resp, dict) else resp
+        # Response shape: {"success": true, "data": {"notifications": [...]}}
+        data = resp.get("data", {}) if isinstance(resp, dict) else {}
+        items = data.get("notifications", []) if isinstance(data, dict) else []
     except ApiError as e:
         items = []
         error = e.detail
@@ -28,8 +30,7 @@ async def notifications_page(
     finally:
         await client.aclose()
 
-    return templates.TemplateResponse("notifications.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "notifications.html", {
         "notifications": items,
         "error": error,
     })

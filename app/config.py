@@ -7,12 +7,15 @@ class Settings(BaseSettings):
 
     APP_NAME: str = "Learn 5 by 5"
     DEBUG: bool = True
-    SECRET_KEY: str = "change-me-in-production"
+
+    # Session secret — read from SESSION_SECRET env/secret, fallback for local dev only
+    SECRET_KEY: str = os.environ.get("SESSION_SECRET", "change-me-in-production")
     SESSION_COOKIE_NAME: str = "l5b5_session"
 
     # Backend API base URL (same one the Flutter app uses)
     API_BASE_URL: str = "https://learn-5-by-5-api-backend.onrender.com/api/v1"
 
+    # Google OAuth Web Client ID — set GOOGLE_WEB_CLIENT_ID env var
     GOOGLE_WEB_CLIENT_ID: str = ""
 
 

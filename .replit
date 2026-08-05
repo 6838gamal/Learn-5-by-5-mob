@@ -27,7 +27,7 @@ outputType = "webview"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "sed -i \"s|GOOGLE_CLIENT_ID_PLACEHOLDER|$GOOGLE_WEB_CLIENT_ID|g\" web/index.html && flutter run -d web-server --web-port=5000 --web-hostname=0.0.0.0 --dart-define=GOOGLE_WEB_CLIENT_ID=$GOOGLE_WEB_CLIENT_ID --dart-define=API_BASE_URL=${API_BASE_URL:-https://learn-5-by-5-api-backend.onrender.com/api/v1}"
+args = "uvicorn app.main:app --host 0.0.0.0 --port 5000 --reload"
 waitForPort = 5000
 
 [[ports]]
@@ -43,3 +43,4 @@ externalPort = 8000
 [userenv.shared]
 API_BASE_URL = "https://learn-5-by-5-api-backend.onrender.com/api/v1"
 APP_DATABASE_URL = "postgresql://postgres:password@helium:5432/heliumdb"
+GOOGLE_WEB_CLIENT_ID = "434056178407-ibflr5r16l1mrokkm6e35pb15fv1ei0o.apps.googleusercontent.com"

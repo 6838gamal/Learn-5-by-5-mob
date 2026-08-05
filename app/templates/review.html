@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}Flashcard Review — Learn 5×5{% endblock %}
+
+{% block head %}
+<style>
+  .card-flip { perspective: 900px; }
+  .card-inner { transition: transform .5s cubic-bezier(.4,0,.2,1); transform-style: preserve-3d; position: relative; }
+  .card-inner.flipped { transform: rotateY(180deg); }
+  .card-face { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+  .card-back { transform: rotateY(180deg); }
+  @keyframes slideRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(80px); opacity: 0; } }
+  @keyframes slideLeft  { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-80px); opacity: 0; } }
+  .swipe-right { animation: slideRight .3s ease forwards; }
+  .swipe-left  { animation: slideLeft  .3s ease forwards; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto" x-data="reviewApp({{ words | tojson if words else '[]' }})">
+
+  {% if error %}
+  <div class="card p-4 mb-4 text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl text-sm">⚠ {{ error }}</div>
+  {% endif %}
+
+  <!-- All done state -->
+  <template x-if="done">
+    <div class="card p-10 text-center space-y-4">
+      <div class="text-6xl">✅</div>
+      <h2 class="text-2xl font-black text-gray-900 dark:text-white">Session complete!</h2>
+      <p class="text-gray-500 dark:text-gray-400" x-text="`Reviewed ${total} card${total !== 1 ? 's' : ''}.`"></p>
+      <div class="grid grid-cols-2 gap-3 max-w-xs mx-auto mt-4 text-sm">
+        <div class="rounded-xl bg-brand-50 dark:bg-brand-900/30 p-3 text-center">
+          <p class="text-2xl font-black text-brand-600 dark:text-brand-400" x-text="easyCt"></p>
+          <p class="text-gray-500 text-xs mt-0.5">Remembered</p>
+        </div>
+        <div class="rounded-xl bg-red-50 dark:bg-red-900/20 p-3 text-center">
+          <p class="text-2xl font-black text-red-500" x-text="hardCt"></p>
+          <p class="text-gray-500 text-xs mt-0.5">Struggled</p>
+        </div>
+      </div>
+      <div class="flex gap-3 justify-center mt-4 flex-wrap">
+        <a href="/lesson" class="btn-primary">Today's lesson</a>
+        <a href="/home"   class="btn-secondary">Home</a>
+      </div>
+    </div>
+  </template>
+
+  <!-- No cards state -->
+  <template x-if="!done && words.length === 0">
+    <div class="card p-10 text-center space-y-4">
+      <div class="text-5xl">🎯</div>
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white">You're all caught up!</h2>
+      <p class="text-sm text-gray-500 dark:text-gray-400">No cards due for review right now. Come back later.</p>
+      <a href="/home" class="btn-primary mt-4">Back to home</a>
+    </div>
+  </template>
+
+  <!-- Active review -->
+  <template x-if="!done && words.length > 0">
+    <div>
+      <!-- Progress -->
+      <div class="flex items-center justify-between mb-4">
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white">Flashcard Review</h1>
+        <span class="text-sm text-gray-500 dark:text-gray-400" x-text="`${currentIndex + 1} / ${words.length}`"></span>
+      </div>
+      <div class="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden mb-6">
+        <div class="h-full bg-purple-500 rounded-full transition-all duration-500"
+             :style="`width: ${progress}%`"></div>
+      </div>
+
+      <!-- Flip card -->
+      <div class="card-flip mb-6 cursor-pointer" @click="flip()" :id="'flipcard'">
+        <div class="card-inner rounded-2xl" :class="isFlipped ? 'flipped' : ''" style="min-height: 240px;">
+          <!-- Front -->
+          <div class="card-face card p-8 flex flex-col items-center justify-center text-center absolute inset-0 rounded-2xl">
+            <p class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">Do you know this word?</p>
+            <p class="text-4xl font-black text-gray-900 dark:text-white" x-text="currentWord.word"></p>
+            <p class="text-sm text-gray-400 dark:text-gray-500 mt-2 font-mono" x-text="currentWord.pronunciation || currentWord.phonetic || ''"></p>
+            <p class="text-xs text-gray-300 dark:text-gray-600 mt-8">Tap to reveal</p>
+          </div>
+
+          <!-- Back -->
+          <div class="card-face card-back card p-8 flex flex-col items-center justify-center text-center absolute inset-0 rounded-2xl">
+            <p class="text-2xl font-black text-gray-900 dark:text-white mb-2" x-text="currentWord.word"></p>
+            <p class="text-lg font-semibold text-purple-600 dark:text-purple-400 mb-3" x-text="currentWord.translation || currentWord.definition || '—'"></p>
+            <div class="w-full p-3 rounded-xl bg-gray-50 dark:bg-gray-700/50 text-left">
+              <p class="text-xs font-semibold text-gray-400 dark:text-gray-500 mb-1">Example</p>
+              <p class="text-sm text-gray-700 dark:text-gray-300 italic" x-text="currentWord.example_sentence || currentWord.example || '—'"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rating buttons (shown after flip) -->
+      <div x-show="isFlipped" class="grid grid-cols-3 gap-3">
+        <button @click="rate(1)" class="py-3 rounded-xl border-2 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 font-semibold text-sm hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+          😖<br/><span class="text-xs">Again</span>
+        </button>
+        <button @click="rate(3)" class="py-3 rounded-xl border-2 border-amber-200 dark:border-amber-700 text-amber-600 dark:text-amber-400 font-semibold text-sm hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors">
+          🤔<br/><span class="text-xs">Hard</span>
+        </button>
+        <button @click="rate(5)" class="py-3 rounded-xl border-2 border-brand-200 dark:border-brand-800 text-brand-700 dark:text-brand-400 font-semibold text-sm hover:bg-brand-50 dark:hover:bg-brand-900/20 transition-colors">
+          😊<br/><span class="text-xs">Easy</span>
+        </button>
+      </div>
+
+      <p class="text-center text-xs text-gray-400 dark:text-gray-600 mt-4">
+        Tap the card to flip · Rate how well you remembered
+      </p>
+    </div>
+  </template>
+
+</div>
+
+<script>
+function reviewApp(words) {
+  return {
+    words,
+    currentIndex: 0,
+    isFlipped: false,
+    done: false,
+    total: words.length,
+    easyCt: 0,
+    hardCt: 0,
+    results: [],
+
+    get currentWord() { return this.words[this.currentIndex] || {}; },
+    get progress() {
+      if (!this.words.length) return 0;
+      return Math.round(((this.currentIndex) / this.words.length) * 100);
+    },
+
+    flip() { this.isFlipped = !this.isFlipped; },
+
+    async rate(quality) {
+      const word = this.currentWord;
+      if (quality >= 4) this.easyCt++; else this.hardCt++;
+      this.results.push({ word_id: word.id, quality });
+
+      // Submit to backend
+      try {
+        await fetch('/review/submit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ word_id: word.id, quality })
+        });
+      } catch (_) {}
+
+      if (this.currentIndex < this.words.length - 1) {
+        this.currentIndex++;
+        this.isFlipped = false;
+      } else {
+        this.done = true;
+      }
+    }
+  }
+}
+</script>
+{% endblock %}

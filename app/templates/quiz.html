@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% block title %}Quiz — Learn 5×5{% endblock %}
+
+{% block head %}
+<style>
+  @keyframes pop { 0%{transform:scale(1)} 50%{transform:scale(1.04)} 100%{transform:scale(1)} }
+  .pop { animation: pop .25s ease; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto" x-data="quizApp({{ quiz | tojson if quiz else 'null' }})">
+
+  {% if error and not quiz %}
+  <div class="card p-8 text-center">
+    <div class="text-4xl mb-4">⚠️</div>
+    <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-2">Quiz unavailable</h2>
+    <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">{{ error }}</p>
+    <a href="/home" class="btn-primary">← Back to home</a>
+  </div>
+
+  {% elif not quiz %}
+  <div class="card p-10 text-center space-y-4">
+    <div class="text-5xl">📝</div>
+    <h2 class="text-lg font-bold text-gray-900 dark:text-white">No quiz available</h2>
+    <p class="text-sm text-gray-500 dark:text-gray-400">Complete a lesson first to unlock the quiz.</p>
+    <a href="/lesson" class="btn-primary">Start today's lesson</a>
+  </div>
+
+  {% else %}
+
+  <!-- Score screen (done) -->
+  <template x-if="done">
+    <div class="card p-10 text-center space-y-4">
+      <div class="text-6xl" x-text="score >= 80 ? '🏆' : score >= 60 ? '👍' : '💪'"></div>
+      <h2 class="text-2xl font-black text-gray-900 dark:text-white" x-text="`${score}%`"></h2>
+      <p class="text-gray-500 dark:text-gray-400" x-text="`${correct} correct out of ${total} questions`"></p>
+      <div class="flex gap-3 justify-center mt-4 flex-wrap">
+        <a href="/quiz" class="btn-primary">Try again</a>
+        <a href="/home" class="btn-secondary">Home</a>
+      </div>
+    </div>
+  </template>
+
+  <!-- Active quiz -->
+  <template x-if="!done">
+    <div>
+      <!-- Progress -->
+      <div class="flex items-center justify-between mb-3">
+        <h1 class="text-xl font-bold text-gray-900 dark:text-white">Quiz</h1>
+        <span class="text-sm text-gray-500 dark:text-gray-400" x-text="`${currentIndex + 1} / ${questions.length}`"></span>
+      </div>
+      <div class="h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden mb-6">
+        <div class="h-full bg-blue-500 rounded-full transition-all duration-500"
+             :style="`width: ${progress}%`"></div>
+      </div>
+
+      <!-- Question card -->
+      <div class="card p-7 mb-5">
+        <p class="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3" x-text="questionType"></p>
+        <p class="text-2xl font-black text-gray-900 dark:text-white mb-1" x-text="currentQ.word || currentQ.question"></p>
+        <p class="text-sm text-gray-500 dark:text-gray-400" x-text="currentQ.hint || ''"></p>
+      </div>
+
+      <!-- Choices -->
+      <div class="space-y-3">
+        <template x-for="(choice, idx) in currentQ.choices || currentQ.options || []" :key="idx">
+          <button @click="answer(choice)"
+                  :disabled="answered"
+                  :class="{
+                    'border-brand-500 bg-brand-50 dark:bg-brand-900/30 text-brand-700 dark:text-brand-300': answered && choice === currentQ.correct_answer,
+                    'border-red-400  bg-red-50  dark:bg-red-900/20  text-red-700  dark:text-red-400':   answered && choice === selected && choice !== currentQ.correct_answer,
+                    'border-gray-200 dark:border-gray-600 hover:border-brand-400 hover:bg-brand-50 dark:hover:border-brand-600 dark:hover:bg-brand-900/20': !answered,
+                  }"
+                  class="w-full text-left px-5 py-4 rounded-2xl border-2 font-medium text-sm transition-all"
+                  x-text="choice">
+          </button>
+        </template>
+      </div>
+
+      <!-- Feedback + next -->
+      <div x-show="answered" class="mt-5 flex items-center justify-between gap-4">
+        <p class="text-sm font-semibold"
+           :class="isCorrect ? 'text-brand-600 dark:text-brand-400' : 'text-red-500'"
+           x-text="isCorrect ? '✅ Correct!' : `❌ Answer: ${currentQ.correct_answer}`"></p>
+        <button @click="next()" class="btn-primary shrink-0">
+          <span x-text="currentIndex < questions.length - 1 ? 'Next →' : 'Finish'"></span>
+        </button>
+      </div>
+    </div>
+  </template>
+  {% endif %}
+
+</div>
+
+<script>
+function quizApp(quiz) {
+  const questions = quiz ? (quiz.questions || []) : [];
+  return {
+    quiz,
+    quizId: quiz ? quiz.id : null,
+    questions,
+    currentIndex: 0,
+    answered: false,
+    selected: null,
+    isCorrect: false,
+    correct: 0,
+    done: false,
+
+    get currentQ() { return this.questions[this.currentIndex] || {}; },
+    get total() { return this.questions.length; },
+    get progress() {
+      if (!this.total) return 0;
+      return Math.round((this.currentIndex / this.total) * 100);
+    },
+    get score() {
+      return this.total ? Math.round((this.correct / this.total) * 100) : 0;
+    },
+    get questionType() {
+      const types = { 'translation': 'Pick the translation', 'fill_blank': 'Fill in the blank', 'multiple_choice': 'Choose the correct answer' };
+      return types[this.currentQ.type] || 'Choose the correct answer';
+    },
+
+    async answer(choice) {
+      if (this.answered) return;
+      this.selected = choice;
+      this.answered = true;
+      this.isCorrect = (choice === this.currentQ.correct_answer);
+      if (this.isCorrect) this.correct++;
+
+      // Submit to backend
+      if (this.quizId) {
+        try {
+          await fetch(`/quiz/${this.quizId}/answer`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question_id: this.currentQ.id, answer: choice })
+          });
+        } catch (_) {}
+      }
+    },
+
+    async next() {
+      if (this.currentIndex < this.questions.length - 1) {
+        this.currentIndex++;
+        this.answered = false;
+        this.selected = null;
+      } else {
+        // Complete quiz
+        if (this.quizId) {
+          try {
+            await fetch(`/quiz/${this.quizId}/complete`, { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+          } catch (_) {}
+        }
+        this.done = true;
+      }
+    }
+  }
+}
+</script>
+{% endblock %}

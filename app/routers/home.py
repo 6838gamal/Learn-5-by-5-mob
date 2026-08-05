@@ -46,11 +46,12 @@ async def home_page(
 
     await client.aclose()
 
-    return templates.TemplateResponse("home.html", {
-        "request": request,
+    import datetime
+    return templates.TemplateResponse(request, "home.html", {
         "lesson": lesson_data,
         "streak": streak_data,
         "review_count": review_count,
         "user": user_data,
         "errors": errors,
+        "now_hour": datetime.datetime.now().hour,
     })

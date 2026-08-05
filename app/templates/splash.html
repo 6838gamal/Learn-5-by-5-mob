@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Learn 5×5</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { theme: { extend: { colors: { brand: { 400:'#4ade80', 500:'#22c55e', 600:'#16a34a', 700:'#15803d' } } } } }</script>
+  <style>
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse-ring {
+      0%   { transform: scale(1);   opacity: .7; }
+      50%  { transform: scale(1.15); opacity: .3; }
+      100% { transform: scale(1);   opacity: .7; }
+    }
+    @keyframes progress {
+      from { width: 0%; }
+      to   { width: 100%; }
+    }
+    .anim-logo    { animation: fadeInUp .6s ease both; }
+    .anim-title   { animation: fadeInUp .6s .15s ease both; }
+    .anim-sub     { animation: fadeInUp .6s .3s ease both; }
+    .anim-bar     { animation: fadeInUp .6s .45s ease both; }
+    .ring         { animation: pulse-ring 2s ease-in-out infinite; }
+    .progress-fill{ animation: progress 2.4s .6s ease forwards; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-emerald-900 via-brand-700 to-teal-800 flex flex-col items-center justify-center p-8">
+
+  <!-- Ripple ring behind logo -->
+  <div class="relative flex items-center justify-center mb-8">
+    <div class="ring absolute w-32 h-32 rounded-full bg-white/10"></div>
+    <div class="anim-logo relative w-24 h-24 rounded-3xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-2xl">
+      <span class="text-white font-black text-5xl select-none">5</span>
+    </div>
+  </div>
+
+  <h1 class="anim-title text-white font-black text-4xl tracking-tight mb-2 text-center">
+    Learn 5<span class="text-brand-400">×</span>5
+  </h1>
+  <p class="anim-sub text-white/70 text-base text-center mb-12">
+    5 new words · every single day
+  </p>
+
+  <!-- Progress bar -->
+  <div class="anim-bar w-48 h-1.5 bg-white/20 rounded-full overflow-hidden">
+    <div class="progress-fill h-full bg-white rounded-full"></div>
+  </div>
+
+  <script>
+    // Redirect after animation completes (~3 s)
+    setTimeout(() => { window.location.href = '{{ redirect_url }}'; }, 3000);
+  </script>
+</body>
+</html>

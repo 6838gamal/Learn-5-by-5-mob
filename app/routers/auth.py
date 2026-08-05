@@ -1,4 +1,4 @@
-"""Auth router — login, register, forgot password, logout."""
+"""Auth router — Google Sign-In only, logout."""
 
 from fastapi import APIRouter, Request, Form, Depends
 from fastapi.responses import HTMLResponse, RedirectResponse
@@ -13,41 +13,18 @@ templates = Jinja2Templates(directory="app/templates")
 settings = get_settings()
 
 
-# ── Login ─────────────────────────────────────────────────────────────────────
+# ── Login page (Google Sign-In only) ──────────────────────────────────────────
 @router.get("/login", response_class=HTMLResponse)
-async def login_page(request: Request):
+async def login_page(request: Request, error: str = ""):
     if request.session.get("access_token"):
         return RedirectResponse("/home")
-    return templates.TemplateResponse("auth/login.html", {
-        "request": request,
+    return templates.TemplateResponse(request, "auth/login.html", {
         "google_client_id": settings.GOOGLE_WEB_CLIENT_ID,
-        "error": None,
+        "error": error or None,
     })
 
 
-@router.post("/login", response_class=HTMLResponse)
-async def login_submit(
-    request: Request,
-    email: str = Form(...),
-    password: str = Form(...),
-    client: ApiClient = Depends(get_api_client),
-):
-    try:
-        data = await client.post("/auth/login", json={"email": email, "password": password})
-        tokens = data.get("data", data)
-        request.session["access_token"] = tokens["access_token"]
-        request.session["refresh_token"] = tokens.get("refresh_token", "")
-        return RedirectResponse("/home", status_code=303)
-    except ApiError as e:
-        return templates.TemplateResponse("auth/login.html", {
-            "request": request,
-            "google_client_id": settings.GOOGLE_WEB_CLIENT_ID,
-            "error": e.detail,
-        }, status_code=400)
-    finally:
-        await client.aclose()
-
-
+# ── Google Sign-In callback ───────────────────────────────────────────────────
 @router.post("/google", response_class=HTMLResponse)
 async def google_login(
     request: Request,
@@ -59,75 +36,12 @@ async def google_login(
         tokens = data.get("data", data)
         request.session["access_token"] = tokens["access_token"]
         request.session["refresh_token"] = tokens.get("refresh_token", "")
-        return RedirectResponse("/home", status_code=303)
+        # First-time users go to onboarding; returning users go to home
+        needs_onboarding = tokens.get("needs_onboarding", False)
+        destination = "/onboarding" if needs_onboarding else "/home"
+        return RedirectResponse(destination, status_code=303)
     except ApiError as e:
-        return templates.TemplateResponse("auth/login.html", {
-            "request": request,
-            "google_client_id": settings.GOOGLE_WEB_CLIENT_ID,
-            "error": e.detail,
-        }, status_code=400)
-    finally:
-        await client.aclose()
-
-
-# ── Register ──────────────────────────────────────────────────────────────────
-@router.get("/register", response_class=HTMLResponse)
-async def register_page(request: Request):
-    return templates.TemplateResponse("auth/register.html", {"request": request, "error": None})
-
-
-@router.post("/register", response_class=HTMLResponse)
-async def register_submit(
-    request: Request,
-    full_name: str = Form(...),
-    email: str = Form(...),
-    password: str = Form(...),
-    client: ApiClient = Depends(get_api_client),
-):
-    try:
-        data = await client.post("/auth/register", json={"full_name": full_name, "email": email, "password": password})
-        tokens = data.get("data", data)
-        request.session["access_token"] = tokens["access_token"]
-        request.session["refresh_token"] = tokens.get("refresh_token", "")
-        return RedirectResponse("/onboarding", status_code=303)
-    except ApiError as e:
-        return templates.TemplateResponse("auth/register.html", {
-            "request": request,
-            "error": e.detail,
-        }, status_code=400)
-    finally:
-        await client.aclose()
-
-
-# ── Forgot password ───────────────────────────────────────────────────────────
-@router.get("/forgot-password", response_class=HTMLResponse)
-async def forgot_page(request: Request):
-    return templates.TemplateResponse("auth/forgot_password.html", {
-        "request": request,
-        "sent": False,
-        "error": None,
-    })
-
-
-@router.post("/forgot-password", response_class=HTMLResponse)
-async def forgot_submit(
-    request: Request,
-    email: str = Form(...),
-    client: ApiClient = Depends(get_api_client),
-):
-    try:
-        await client.post("/auth/forgot-password", json={"email": email})
-        return templates.TemplateResponse("auth/forgot_password.html", {
-            "request": request,
-            "sent": True,
-            "error": None,
-        })
-    except ApiError as e:
-        return templates.TemplateResponse("auth/forgot_password.html", {
-            "request": request,
-            "sent": False,
-            "error": e.detail,
-        }, status_code=400)
+        return RedirectResponse(f"/auth/login?error={e.detail}", status_code=303)
     finally:
         await client.aclose()
 

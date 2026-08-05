@@ -5,95 +5,87 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sign in — Learn 5×5</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script>tailwind.config = { theme: { extend: { colors: { brand: { 600:'#16a34a', 700:'#15803d' } } } } }</script>
-  {% if google_client_id %}
+  <script>tailwind.config = { theme: { extend: { colors: { brand: { 400:'#4ade80', 500:'#22c55e', 600:'#16a34a', 700:'#15803d' } } } } }</script>
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-  {% endif %}
+  <style>
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .card-in { animation: fadeInUp .5s ease both; }
+  </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-brand-600 to-emerald-800 flex items-center justify-center p-4">
+<body class="min-h-screen bg-gradient-to-br from-emerald-900 via-brand-700 to-teal-800 flex items-center justify-center p-4">
 
-<div class="w-full max-w-md">
+<div class="w-full max-w-sm">
   <!-- Logo -->
-  <div class="text-center mb-8">
-    <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm mb-4">
-      <span class="text-white font-black text-3xl">5</span>
+  <div class="text-center mb-10">
+    <div class="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-white/20 backdrop-blur-sm mb-5 shadow-xl">
+      <span class="text-white font-black text-4xl">5</span>
     </div>
-    <h1 class="text-white font-bold text-3xl">Learn 5×5</h1>
-    <p class="text-white/80 mt-1 text-sm">5 new words a day, every day</p>
+    <h1 class="text-white font-black text-3xl tracking-tight">Learn 5×5</h1>
+    <p class="text-white/70 mt-1 text-sm">5 new words · every single day</p>
   </div>
 
-  <div class="bg-white rounded-3xl shadow-2xl p-8">
-    <h2 class="text-2xl font-bold text-gray-900 mb-6">Welcome back</h2>
+  <!-- Card -->
+  <div class="card-in bg-white rounded-3xl shadow-2xl p-8">
+    <h2 class="text-xl font-bold text-gray-900 mb-1 text-center">Welcome back</h2>
+    <p class="text-gray-400 text-sm text-center mb-7">Sign in to continue learning</p>
 
     {% if error %}
-    <div class="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">{{ error }}</div>
+    <div class="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm text-center">
+      {{ error }}
+    </div>
     {% endif %}
 
-    <!-- Email/password form -->
-    <form method="post" action="/auth/login" class="space-y-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-        <input type="email" name="email" required autocomplete="email"
-               class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600 focus:border-transparent"
-               placeholder="you@example.com" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-        <input type="password" name="password" required autocomplete="current-password"
-               class="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-600 focus:border-transparent"
-               placeholder="••••••••" />
-        <div class="text-right mt-1">
-          <a href="/auth/forgot-password" class="text-xs text-brand-600 hover:underline">Forgot password?</a>
-        </div>
-      </div>
-      <button type="submit"
-              class="w-full py-3 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm transition-colors">
-        Sign in
-      </button>
-    </form>
-
+    <!-- Google Sign-In (only option) -->
     {% if google_client_id %}
-    <div class="relative my-5">
-      <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-gray-200"></div></div>
-      <div class="relative text-center"><span class="bg-white px-3 text-xs text-gray-400">or</span></div>
-    </div>
-
-    <!-- Google Sign-In -->
-    <div x-data="googleAuth('{{ google_client_id }}')" class="space-y-3">
-      <button @click="signIn()" type="button"
-              class="w-full flex items-center justify-center gap-3 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 font-medium text-sm text-gray-700 transition-colors">
-        <svg class="w-5 h-5" viewBox="0 0 48 48"><path fill="#4285F4" d="M47.52 24.55c0-1.63-.15-3.2-.42-4.71H24v8.91h13.19c-.57 3.01-2.3 5.56-4.9 7.27v6.04h7.93c4.64-4.27 7.3-10.57 7.3-17.51z"/><path fill="#34A853" d="M24 48c6.63 0 12.19-2.2 16.25-5.94l-7.93-6.04C30.1 37.54 27.22 38.4 24 38.4c-6.41 0-11.84-4.33-13.78-10.15H2.06v6.23C6.1 42.64 14.44 48 24 48z"/><path fill="#FBBC05" d="M10.22 28.25A14.41 14.41 0 019.6 24c0-1.48.25-2.91.62-4.25v-6.23H2.06A23.99 23.99 0 000 24c0 3.86.93 7.51 2.06 10.48l8.16-6.23z"/><path fill="#EA4335" d="M24 9.6c3.61 0 6.85 1.24 9.4 3.67l7.04-7.04C36.18 2.38 30.62 0 24 0 14.44 0 6.1 5.36 2.06 13.52l8.16 6.23C12.16 13.93 17.59 9.6 24 9.6z"/></svg>
+    <div x-data="googleAuth('{{ google_client_id }}')" xmlns:x-data="http://www.w3.org/1999/xhtml">
+      <button onclick="googleSignIn('{{ google_client_id }}')" type="button"
+              class="w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl border-2 border-gray-200 hover:border-brand-500 hover:bg-brand-50 font-semibold text-sm text-gray-700 transition-all shadow-sm active:scale-95">
+        <svg class="w-5 h-5 shrink-0" viewBox="0 0 48 48">
+          <path fill="#4285F4" d="M47.52 24.55c0-1.63-.15-3.2-.42-4.71H24v8.91h13.19c-.57 3.01-2.3 5.56-4.9 7.27v6.04h7.93c4.64-4.27 7.3-10.57 7.3-17.51z"/>
+          <path fill="#34A853" d="M24 48c6.63 0 12.19-2.2 16.25-5.94l-7.93-6.04C30.1 37.54 27.22 38.4 24 38.4c-6.41 0-11.84-4.33-13.78-10.15H2.06v6.23C6.1 42.64 14.44 48 24 48z"/>
+          <path fill="#FBBC05" d="M10.22 28.25A14.41 14.41 0 019.6 24c0-1.48.25-2.91.62-4.25v-6.23H2.06A23.99 23.99 0 000 24c0 3.86.93 7.51 2.06 10.48l8.16-6.23z"/>
+          <path fill="#EA4335" d="M24 9.6c3.61 0 6.85 1.24 9.4 3.67l7.04-7.04C36.18 2.38 30.62 0 24 0 14.44 0 6.1 5.36 2.06 13.52l8.16 6.23C12.16 13.93 17.59 9.6 24 9.6z"/>
+        </svg>
         Continue with Google
       </button>
     </div>
+    {% else %}
+    <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-sm text-center">
+      ⚠ Google Sign-In is not configured.<br/>
+      <span class="text-xs mt-1 block text-amber-600">Set the <code class="font-mono">GOOGLE_WEB_CLIENT_ID</code> environment variable.</span>
+    </div>
+    {% endif %}
+  </div>
 
-    <script>
-    function googleAuth(clientId) {
-      return {
-        async signIn() {
-          const { google } = window;
-          if (!google) { alert('Google SDK not loaded'); return; }
-          google.accounts.id.initialize({
-            client_id: clientId,
-            callback: async (response) => {
-              const form = new FormData();
-              form.append('id_token', response.credential);
-              const res = await fetch('/auth/google', { method: 'POST', body: form });
-              if (res.redirected) { window.location.href = res.url; }
-            }
-          });
-          google.accounts.id.prompt();
-        }
+  <p class="text-center text-white/50 text-xs mt-6">
+    By signing in you agree to our Terms &amp; Privacy Policy.
+  </p>
+</div>
+
+<script>
+function googleSignIn(clientId) {
+  if (!window.google) { alert('Google SDK not loaded yet. Please refresh.'); return; }
+  google.accounts.id.initialize({
+    client_id: clientId,
+    callback: async (response) => {
+      const btn = document.querySelector('button');
+      if (btn) { btn.disabled = true; btn.textContent = 'Signing in…'; }
+      const form = new FormData();
+      form.append('id_token', response.credential);
+      const res = await fetch('/auth/google', { method: 'POST', body: form });
+      if (res.redirected) { window.location.href = res.url; }
+      else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.detail || 'Sign-in failed. Please try again.');
+        if (btn) { btn.disabled = false; btn.textContent = 'Continue with Google'; }
       }
     }
-    </script>
-    {% endif %}
-
-    <p class="text-center text-sm text-gray-500 mt-6">
-      Don't have an account?
-      <a href="/auth/register" class="text-brand-600 font-semibold hover:underline">Create one</a>
-    </p>
-  </div>
-</div>
+  });
+  google.accounts.id.prompt();
+}
+</script>
 </body>
 </html>

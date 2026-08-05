@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Settings — Learn 5×5{% endblock %}
+{% block content %}
+<div class="max-w-xl mx-auto space-y-6">
+
+  <div class="flex items-center gap-3">
+    <a href="/profile" class="text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    </a>
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Settings</h1>
+  </div>
+
+  {% if success %}
+  <div class="p-3 rounded-xl bg-brand-50 dark:bg-brand-900/20 border border-brand-200 dark:border-brand-800 text-brand-700 dark:text-brand-400 text-sm">✅ Settings saved.</div>
+  {% endif %}
+
+  <form method="post" action="/profile/settings" class="space-y-5" x-data="{ theme: '{{ theme }}', locale: '{{ locale }}' }">
+
+    <!-- Theme -->
+    <div class="card p-5">
+      <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-4">Appearance</h2>
+      <div class="grid grid-cols-3 gap-3">
+        {% for val, label, icon in [('light','Light','☀️'),('dark','Dark','🌙'),('system','System','💻')] %}
+        <label class="cursor-pointer">
+          <input type="radio" name="theme" value="{{ val }}" class="peer sr-only"
+                 {% if theme == val %}checked{% endif %}
+                 @change="theme = '{{ val }}'; if ('{{ val }}' !== 'system') { document.documentElement.classList.toggle('dark', '{{ val }}' === 'dark'); localStorage.setItem('theme','{{ val }}'); }" />
+          <div class="border-2 border-gray-200 dark:border-gray-600 peer-checked:border-brand-500 peer-checked:bg-brand-50 dark:peer-checked:bg-brand-900/30 rounded-xl p-3 text-center transition-all">
+            <span class="text-xl">{{ icon }}</span>
+            <p class="text-xs font-medium text-gray-700 dark:text-gray-200 mt-1">{{ label }}</p>
+          </div>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Language -->
+    <div class="card p-5">
+      <h2 class="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-4">App language</h2>
+      <div class="grid grid-cols-2 gap-3">
+        {% for code, name, flag in [('en','English','🇬🇧'),('ar','Arabic','🇸🇦'),('fr','French','🇫🇷'),('es','Spanish','🇪🇸'),('de','German','🇩🇪')] %}
+        <label class="cursor-pointer">
+          <input type="radio" name="locale" value="{{ code }}" class="peer sr-only" {% if locale == code %}checked{% endif %} />
+          <div class="border-2 border-gray-200 dark:border-gray-600 peer-checked:border-brand-500 peer-checked:bg-brand-50 dark:peer-checked:bg-brand-900/30 rounded-xl px-4 py-3 flex items-center gap-2 transition-all">
+            <span>{{ flag }}</span>
+            <p class="text-sm font-medium text-gray-700 dark:text-gray-200">{{ name }}</p>
+          </div>
+        </label>
+        {% endfor %}
+      </div>
+    </div>
+
+    <button type="submit" class="btn-primary w-full justify-center py-3">Save settings</button>
+  </form>
+
+</div>
+{% endblock %}
