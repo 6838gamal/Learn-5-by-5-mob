@@ -130,6 +130,25 @@ async def login_page(request: Request):
 
 @admin_app.post("/login", response_class=HTMLResponse)
 async def login(request: Request, email: str = Form(...), password: str = Form(...)):
+    # ── Option 1: local credentials stored as Replit Secrets ─────────────────
+    # Set ADMIN_EMAIL and ADMIN_PASSWORD as secrets to enable this path.
+    admin_email_env = os.environ.get("ADMIN_EMAIL", "")
+    admin_password_env = os.environ.get("ADMIN_PASSWORD", "")
+
+    if admin_email_env and admin_password_env:
+        if email.lower().strip() == admin_email_env.lower().strip() and password == admin_password_env:
+            # Use a synthetic session token — all API calls will be unauthenticated
+            # (or add ADMIN_API_KEY secret to make authenticated calls)
+            request.session["admin_token"] = os.environ.get("ADMIN_API_KEY", "__local__")
+            request.session["admin_name"] = email.split("@")[0].title()
+            request.session["admin_email"] = email
+            return RedirectResponse("/admin/dashboard", status_code=302)
+        else:
+            return templates.TemplateResponse(request, "auth/login.html",
+                                              {"error": "Invalid email or password."},
+                                              status_code=401)
+
+    # ── Option 2: delegate to backend admin auth endpoint ────────────────────
     async with _make_client() as client:
         try:
             resp = await _api(client, "post", "/admin/auth/login",
@@ -142,11 +161,11 @@ async def login(request: Request, email: str = Form(...), password: str = Form(.
                 raise AdminApiError(401, "No token in response")
         except AdminApiError as e:
             return templates.TemplateResponse(request, "auth/login.html",
-                                              {"error": "Invalid credentials or server error: " + e.detail},
+                                              {"error": "Invalid credentials: " + e.detail},
                                               status_code=401)
-        except httpx.HTTPError as e:
+        except httpx.HTTPError:
             return templates.TemplateResponse(request, "auth/login.html",
-                                              {"error": "Cannot reach server. Try again later."},
+                                              {"error": "Cannot reach server. Set ADMIN_EMAIL and ADMIN_PASSWORD secrets to use local credentials instead."},
                                               status_code=503)
 
     request.session["admin_token"] = token
