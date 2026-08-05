@@ -40,18 +40,10 @@
 
     <!-- Google Sign-In (only option) -->
     {% if google_client_id %}
-    <div x-data="googleAuth('{{ google_client_id }}')" xmlns:x-data="http://www.w3.org/1999/xhtml">
-      <button onclick="googleSignIn('{{ google_client_id }}')" type="button"
-              class="w-full flex items-center justify-center gap-3 py-3.5 rounded-2xl border-2 border-gray-200 hover:border-brand-500 hover:bg-brand-50 font-semibold text-sm text-gray-700 transition-all shadow-sm active:scale-95">
-        <svg class="w-5 h-5 shrink-0" viewBox="0 0 48 48">
-          <path fill="#4285F4" d="M47.52 24.55c0-1.63-.15-3.2-.42-4.71H24v8.91h13.19c-.57 3.01-2.3 5.56-4.9 7.27v6.04h7.93c4.64-4.27 7.3-10.57 7.3-17.51z"/>
-          <path fill="#34A853" d="M24 48c6.63 0 12.19-2.2 16.25-5.94l-7.93-6.04C30.1 37.54 27.22 38.4 24 38.4c-6.41 0-11.84-4.33-13.78-10.15H2.06v6.23C6.1 42.64 14.44 48 24 48z"/>
-          <path fill="#FBBC05" d="M10.22 28.25A14.41 14.41 0 019.6 24c0-1.48.25-2.91.62-4.25v-6.23H2.06A23.99 23.99 0 000 24c0 3.86.93 7.51 2.06 10.48l8.16-6.23z"/>
-          <path fill="#EA4335" d="M24 9.6c3.61 0 6.85 1.24 9.4 3.67l7.04-7.04C36.18 2.38 30.62 0 24 0 14.44 0 6.1 5.36 2.06 13.52l8.16 6.23C12.16 13.93 17.59 9.6 24 9.6z"/>
-        </svg>
-        Continue with Google
-      </button>
-    </div>
+    <!-- Container where Google renders its official button -->
+    <div id="g_btn_container" class="flex justify-center min-h-[44px]"></div>
+    <!-- Fallback shown while SDK loads -->
+    <p id="g_loading" class="text-center text-gray-400 text-sm mt-1">Loading Google Sign-In…</p>
     {% else %}
     <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-sm text-center">
       ⚠ Google Sign-In is not configured.<br/>
@@ -65,27 +57,52 @@
   </p>
 </div>
 
+{% if google_client_id %}
 <script>
-function googleSignIn(clientId) {
-  if (!window.google) { alert('Google SDK not loaded yet. Please refresh.'); return; }
-  google.accounts.id.initialize({
-    client_id: clientId,
-    callback: async (response) => {
-      const btn = document.querySelector('button');
-      if (btn) { btn.disabled = true; btn.textContent = 'Signing in…'; }
-      const form = new FormData();
-      form.append('id_token', response.credential);
-      const res = await fetch('/auth/google', { method: 'POST', body: form });
-      if (res.redirected) { window.location.href = res.url; }
-      else {
-        const data = await res.json().catch(() => ({}));
-        alert(data.detail || 'Sign-in failed. Please try again.');
-        if (btn) { btn.disabled = false; btn.textContent = 'Continue with Google'; }
+  // Called automatically by the Google Identity Services SDK after it loads
+  window.onGoogleLibraryLoad = function () {
+    const loading = document.getElementById('g_loading');
+    if (loading) loading.remove();
+
+    google.accounts.id.initialize({
+      client_id: '{{ google_client_id }}',
+      callback: handleCredential,
+      ux_mode: 'popup',
+    });
+
+    google.accounts.id.renderButton(
+      document.getElementById('g_btn_container'),
+      {
+        type: 'standard',
+        shape: 'pill',
+        theme: 'outline',
+        text: 'continue_with',
+        size: 'large',
+        width: 300,
       }
+    );
+  };
+
+  async function handleCredential(response) {
+    const container = document.getElementById('g_btn_container');
+    if (container) container.innerHTML = '<p class="text-center text-gray-400 text-sm">Signing in…</p>';
+
+    const form = new FormData();
+    form.append('id_token', response.credential);
+
+    try {
+      const res = await fetch('/auth/google', { method: 'POST', body: form });
+      if (res.redirected) {
+        window.location.href = res.url;
+      } else {
+        const data = await res.json().catch(() => ({}));
+        window.location.href = '/auth/login?error=' + encodeURIComponent(data.detail || 'Sign-in failed');
+      }
+    } catch (err) {
+      window.location.href = '/auth/login?error=' + encodeURIComponent('Network error. Please try again.');
     }
-  });
-  google.accounts.id.prompt();
-}
+  }
 </script>
+{% endif %}
 </body>
 </html>
