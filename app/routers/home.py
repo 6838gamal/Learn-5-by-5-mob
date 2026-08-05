@@ -1,5 +1,7 @@
 """Home / dashboard router."""
 
+import datetime
+
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -46,7 +48,6 @@ async def home_page(
 
     await client.aclose()
 
-    import datetime
     return templates.TemplateResponse(request, "home.html", {
         "lesson": lesson_data,
         "streak": streak_data,

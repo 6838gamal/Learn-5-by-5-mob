@@ -1,6 +1,7 @@
 """Review router — spaced-repetition flashcard session."""
 
 import asyncio
+import httpx
 from fastapi import APIRouter, Request, Depends
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
@@ -33,7 +34,8 @@ async def _enrich_word(client: ApiClient, entry: dict) -> dict:
             "mastery_level": entry.get("mastery_level", 0),
             "next_review_at": entry.get("next_review_at"),
         }
-    except ApiError:
+    except (ApiError, httpx.HTTPError, Exception):
+        # Degrade gracefully so one failed word doesn't crash the whole session
         return {**entry, "word": f"word #{word_id}", "translation": "", "example_sentence": ""}
 
 

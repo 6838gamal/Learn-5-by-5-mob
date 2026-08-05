@@ -55,8 +55,19 @@ async def onboarding_submit(
         request.session["onboarded"] = True
         return RedirectResponse("/home", status_code=303)
     except ApiError as e:
-        lang_resp = await client.get("/languages/")
-        languages = lang_resp.get("data", lang_resp) if isinstance(lang_resp, dict) else lang_resp
+        # Fetch language list for re-rendering the form; fall back to defaults if
+        # that request also fails so the user still sees the error message.
+        try:
+            lang_resp = await client.get("/languages/")
+            languages = lang_resp.get("data", lang_resp) if isinstance(lang_resp, dict) else lang_resp
+        except Exception:
+            languages = [
+                {"code": "en", "name": "English"},
+                {"code": "ar", "name": "Arabic"},
+                {"code": "fr", "name": "French"},
+                {"code": "es", "name": "Spanish"},
+                {"code": "de", "name": "German"},
+            ]
         return templates.TemplateResponse(request, "onboarding.html", {
             "languages": languages,
             "error": e.detail,
