@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" x-data="{ theme: localStorage.getItem('theme') || 'light' }" :class="theme === 'dark' ? 'dark' : ''">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Learn 5 by 5{% endblock %}</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50:'#f0fdf4', 100:'#dcfce7', 400:'#4ade80', 500:'#22c55e', 600:'#16a34a', 700:'#15803d', 900:'#14532d' },
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <!-- HTMX -->
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+  <style>
+    [x-cloak] { display: none !important; }
+    .nav-link { @apply flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors; }
+    .nav-link.active { @apply bg-brand-100 text-brand-700 dark:bg-brand-900 dark:text-brand-400; }
+    .nav-link:not(.active) { @apply text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800; }
+    .card { @apply bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700; }
+    .btn-primary { @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm transition-colors disabled:opacity-50; }
+    .btn-secondary { @apply inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 font-semibold text-sm transition-colors; }
+    .input { @apply w-full rounded-xl border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent; }
+  </style>
+
+  {% block head %}{% endblock %}
+</head>
+<body class="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+
+{% block body %}
+<!-- Shell layout with sidebar nav (used for authenticated pages) -->
+<div class="flex h-screen overflow-hidden">
+
+  <!-- Sidebar (desktop) -->
+  <aside class="hidden md:flex flex-col w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shrink-0">
+    <!-- Logo -->
+    <div class="flex items-center gap-3 px-6 py-5 border-b border-gray-100 dark:border-gray-700">
+      <div class="w-9 h-9 rounded-xl bg-brand-600 flex items-center justify-center text-white font-bold text-lg">5</div>
+      <span class="font-bold text-gray-900 dark:text-white text-lg">Learn 5×5</span>
+    </div>
+
+    <!-- Nav links -->
+    <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+      <a href="/home"         class="nav-link {% if request.url.path == '/home' %}active{% endif %}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        Home
+      </a>
+      <a href="/lesson"       class="nav-link {% if '/lesson' in request.url.path %}active{% endif %}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        Today's Lesson
+      </a>
+      <a href="/review"       class="nav-link {% if '/review' in request.url.path %}active{% endif %}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        Review
+      </a>
+      <a href="/quiz"         class="nav-link {% if '/quiz' in request.url.path %}active{% endif %}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+        Quiz
+      </a>
+      <a href="/ai-chat"      class="nav-link {% if '/ai-chat' in request.url.path %}active{% endif %}">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+        AI Chat
+      </a>
+
+      <div class="pt-4 border-t border-gray-100 dark:border-gray-700 space-y-1">
+        <a href="/notifications" class="nav-link {% if '/notifications' in request.url.path %}active{% endif %}">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          Notifications
+        </a>
+        <a href="/profile"    class="nav-link {% if '/profile' in request.url.path %}active{% endif %}">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+          Profile
+        </a>
+        <a href="/support"    class="nav-link {% if '/support' in request.url.path %}active{% endif %}">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          Support
+        </a>
+      </div>
+    </nav>
+
+    <!-- Logout -->
+    <div class="px-3 py-4 border-t border-gray-100 dark:border-gray-700">
+      <form action="/auth/logout" method="post">
+        <button type="submit" class="nav-link w-full text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          Sign out
+        </button>
+      </form>
+    </div>
+  </aside>
+
+  <!-- Main content -->
+  <div class="flex-1 flex flex-col overflow-hidden">
+    <!-- Mobile top bar -->
+    <header class="md:hidden flex items-center justify-between px-4 py-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700" x-data="{ open: false }">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-brand-600 flex items-center justify-center text-white font-bold">5</div>
+        <span class="font-bold text-gray-900 dark:text-white">Learn 5×5</span>
+      </div>
+      <button @click="open = !open" class="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+      </button>
+      <!-- Mobile drawer -->
+      <div x-show="open" x-cloak @click.away="open=false"
+           class="absolute top-14 left-0 right-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-3 space-y-1 shadow-lg">
+        <a href="/home"         class="nav-link">Home</a>
+        <a href="/lesson"       class="nav-link">Today's Lesson</a>
+        <a href="/review"       class="nav-link">Review</a>
+        <a href="/quiz"         class="nav-link">Quiz</a>
+        <a href="/ai-chat"      class="nav-link">AI Chat</a>
+        <a href="/notifications" class="nav-link">Notifications</a>
+        <a href="/profile"      class="nav-link">Profile</a>
+        <a href="/support"      class="nav-link">Support</a>
+        <form action="/auth/logout" method="post">
+          <button type="submit" class="nav-link w-full text-red-500">Sign out</button>
+        </form>
+      </div>
+    </header>
+
+    <!-- Page content -->
+    <main class="flex-1 overflow-y-auto p-4 md:p-8">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endblock %}
+
+</body>
+</html>

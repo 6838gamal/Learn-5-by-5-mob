@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Home — Learn 5×5{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto space-y-6">
+
+  <!-- Greeting -->
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+      Good {% if now_hour < 12 %}morning{% elif now_hour < 17 %}afternoon{% else %}evening{% endif %}
+      {% if user and user.full_name %}, {{ user.full_name.split()[0] }}{% endif %} 👋
+    </h1>
+    <p class="text-gray-500 dark:text-gray-400 text-sm mt-1">Here's your learning summary for today.</p>
+  </div>
+
+  {% for err in errors %}
+  <div class="p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 text-amber-700 dark:text-amber-300 text-sm">⚠ {{ err }}</div>
+  {% endfor %}
+
+  <!-- Top stats row -->
+  <div class="grid grid-cols-3 gap-4">
+    <!-- Streak -->
+    <div class="card p-5 text-center">
+      <div class="text-3xl font-black text-orange-500">🔥 {{ (streak.current_streak if streak else 0) }}</div>
+      <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium uppercase tracking-wide">Day streak</div>
+    </div>
+    <!-- Reviews due -->
+    <div class="card p-5 text-center">
+      <div class="text-3xl font-black text-purple-600 dark:text-purple-400">{{ review_count or 0 }}</div>
+      <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium uppercase tracking-wide">Reviews due</div>
+    </div>
+    <!-- Words learned -->
+    <div class="card p-5 text-center">
+      <div class="text-3xl font-black text-brand-600">{{ (lesson.words_learned if lesson else 0) }}</div>
+      <div class="text-xs text-gray-500 dark:text-gray-400 mt-1 font-medium uppercase tracking-wide">Words learned</div>
+    </div>
+  </div>
+
+  <!-- Today's Lesson card -->
+  <div class="card p-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-bold text-gray-900 dark:text-white">Today's Lesson</h2>
+      {% if lesson %}
+        {% if lesson.completed %}
+        <span class="text-xs font-semibold px-3 py-1 rounded-full bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">✓ Done</span>
+        {% else %}
+        <span class="text-xs font-semibold px-3 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">In progress</span>
+        {% endif %}
+      {% endif %}
+    </div>
+
+    {% if lesson %}
+      <p class="text-sm text-gray-600 dark:text-gray-300 mb-4">
+        {% if lesson.words %}
+          Today's words:
+          {% for word in lesson.words[:5] %}
+            <span class="inline-block bg-gray-100 dark:bg-gray-700 rounded-lg px-2 py-0.5 text-xs font-medium mr-1">{{ word.word or word }}</span>
+          {% endfor %}
+        {% else %}
+          Your 5 new words are ready.
+        {% endif %}
+      </p>
+
+      <!-- Progress bar -->
+      {% set progress = (lesson.progress_percent | default(0)) %}
+      <div class="h-2 bg-gray-100 dark:bg-gray-700 rounded-full mb-4 overflow-hidden">
+        <div class="h-full bg-brand-500 rounded-full transition-all" style="width: {{ progress }}%"></div>
+      </div>
+
+      {% if not lesson.completed %}
+      <a href="/lesson" class="btn-primary w-full justify-center">
+        {% if progress > 0 %}Continue lesson{% else %}Start lesson{% endif %} →
+      </a>
+      {% else %}
+      <a href="/lesson" class="btn-secondary w-full justify-center">Review today's words</a>
+      {% endif %}
+    {% else %}
+      <p class="text-sm text-gray-400 dark:text-gray-500 mb-4">No lesson available yet. Check back later.</p>
+      <a href="/lesson" class="btn-primary w-full justify-center">Go to lesson</a>
+    {% endif %}
+  </div>
+
+  <!-- Review card -->
+  {% if review_count and review_count > 0 %}
+  <div class="card p-6 border-l-4 border-purple-500">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-lg font-bold text-gray-900 dark:text-white">Flashcard Review</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ review_count }} card{{ 's' if review_count != 1 else '' }} waiting for review</p>
+      </div>
+      <a href="/review" class="btn-primary">Review now</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Quick actions -->
+  <div class="grid grid-cols-2 gap-4">
+    <a href="/quiz" class="card p-5 hover:shadow-md transition-shadow group">
+      <div class="text-2xl mb-2">📝</div>
+      <h3 class="font-semibold text-gray-900 dark:text-white group-hover:text-brand-600">Quiz</h3>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Test your knowledge</p>
+    </a>
+    <a href="/ai-chat" class="card p-5 hover:shadow-md transition-shadow group">
+      <div class="text-2xl mb-2">🤖</div>
+      <h3 class="font-semibold text-gray-900 dark:text-white group-hover:text-brand-600">AI Tutor</h3>
+      <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Practice with AI</p>
+    </a>
+  </div>
+
+</div>
+{% endblock %}
