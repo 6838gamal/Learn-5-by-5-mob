@@ -1,10 +1,7 @@
 # ══════════════════════════════════════════════════════════════════════════════
-# Learn 5 by 5 — Admin Dashboard (admin/)
-# Entry point: uvicorn admin.main:app
-# Port: 8001
-#
-# NOTE: The admin app imports from app/ (app.config, app.services.api_client),
-#       so both directories are copied into the image.
+# Learn 5 by 5 — Web Frontend (app/)
+# Entry point: uvicorn app.main:app
+# Port: 5000
 # ══════════════════════════════════════════════════════════════════════════════
 
 # ── Stage 1: Build wheels ─────────────────────────────────────────────────────
@@ -17,10 +14,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1
 
+# Build tools needed for any C-extension packages
 RUN apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
     && rm -rf /var/lib/apt/lists/*
 
+# Copy only the dependency manifest — layer-cached until pyproject.toml changes
 COPY pyproject.toml .
 
 RUN pip install --upgrade pip && \
@@ -42,33 +41,35 @@ WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PORT=8001 \
+    # Defaults — override at runtime via env vars or docker-compose
+    PORT=5000 \
     DEBUG=false \
     ENVIRONMENT=production
 
+# Install pre-built wheels (no compiler needed in runtime image)
 COPY --from=builder /build/wheels /tmp/wheels
 RUN pip install --no-cache-dir /tmp/wheels/* && rm -rf /tmp/wheels
 
-# Non-root user + static dir for the admin sub-app
+# Create a non-root user
 RUN adduser --disabled-password --gecos "" appuser && \
-    mkdir -p admin/static && \
+    mkdir -p app/static && \
     chown -R appuser:appuser /app
 
-# Copy both app/ (shared config + api_client) and admin/
+# Copy application source
 COPY --chown=appuser:appuser app/       ./app/
-COPY --chown=appuser:appuser admin/     ./admin/
 COPY --chown=appuser:appuser pyproject.toml .
 
 USER appuser
 
-EXPOSE 8001
+EXPOSE 5000
 
+# Healthcheck — hits the splash redirect
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8001/login')" || exit 1
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:5000/splash')" || exit 1
 
-CMD ["uvicorn", "admin.main:app", \
+CMD ["uvicorn", "app.main:app", \
      "--host", "0.0.0.0", \
-     "--port", "8001", \
+     "--port", "5000", \
      "--workers", "2", \
      "--proxy-headers", \
      "--forwarded-allow-ips", "*"]

@@ -1,97 +1,77 @@
-version: "3.9"
-
-# ─────────────────────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════════
 # Learn 5 by 5 — Docker Compose
 #
-# Services
-#   db      – PostgreSQL 16
-#   redis   – Redis 7 (Celery broker + cache)
-#   migrate – Alembic migrations (runs once, then exits)
-#   api     – Backend REST API        → http://localhost:8000
-#   admin   – Admin dashboard         → http://localhost:8001/admin
-# ─────────────────────────────────────────────────────────────────────────────
+# Services:
+#   app    → Web frontend  → http://localhost:5000
+#   admin  → Admin panel   → http://localhost:8001
+#
+# Usage:
+#   cp .env.example .env        # fill in your values
+#   docker compose up --build
+# ══════════════════════════════════════════════════════════════════════════════
 
 services:
 
-  # ── Database ────────────────────────────────────────────────────────────────
-  db:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-learn5}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-learn5secret}
-      POSTGRES_DB: ${POSTGRES_DB:-learn5by5}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-learn5}"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
-  # ── Migrations (one-shot) ────────────────────────────────────────────────────
-  migrate:
+  # ── Web frontend ─────────────────────────────────────────────────────────────
+  app:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
-    command: alembic upgrade head
-    environment:
-      APP_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-learn5}:${POSTGRES_PASSWORD:-learn5secret}@db:5432/${POSTGRES_DB:-learn5by5}
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: on-failure
-
-  # ── Backend API ──────────────────────────────────────────────────────────────
-  api:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: learn5by5-app
+    container_name: l5b5-app
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "5000:5000"
     environment:
-      APP_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-learn5}:${POSTGRES_PASSWORD:-learn5secret}@db:5432/${POSTGRES_DB:-learn5by5}
-      SECRET_KEY: ${SECRET_KEY:-changeme_in_production}
-      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
-      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
-      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
-      FIREBASE_CREDENTIALS_JSON: ${FIREBASE_CREDENTIALS_JSON:-}
+      # Session security — required
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is required}
+
+      # Backend API that the frontend proxies to
+      API_BASE_URL: ${API_BASE_URL:-https://learn-5-by-5-api-backend.onrender.com/api/v1}
+
+      # Google OAuth (optional — leave empty to disable Google Sign-In button)
       GOOGLE_WEB_CLIENT_ID: ${GOOGLE_WEB_CLIENT_ID:-}
+
       ENVIRONMENT: ${ENVIRONMENT:-production}
       DEBUG: ${DEBUG:-false}
-    depends_on:
-      db:
-        condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
-    volumes:
-      - uploads_data:/app/static/uploads
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:5000/splash')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
-  # ── Admin Dashboard ──────────────────────────────────────────────────────────
+  # ── Admin dashboard ───────────────────────────────────────────────────────────
   admin:
     build:
       context: .
       dockerfile: admin/Dockerfile
+    image: learn5by5-admin
+    container_name: l5b5-admin
     restart: unless-stopped
     ports:
       - "8001:8001"
     environment:
-      APP_DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-learn5}:${POSTGRES_PASSWORD:-learn5secret}@db:5432/${POSTGRES_DB:-learn5by5}
-      ADMIN_SESSION_SECRET: ${ADMIN_SESSION_SECRET:-changeme_in_production}
+      # Same session secret as the main app
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET is required}
+
+      # Backend API base URL (used by admin for all data calls)
+      API_BASE_URL: ${API_BASE_URL:-https://learn-5-by-5-api-backend.onrender.com/api/v1}
+
+      # Admin credentials — set these to log in without a backend admin account
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+
+      # Optional: backend admin API key for authenticated API calls
+      ADMIN_API_KEY: ${ADMIN_API_KEY:-}
+
       ENVIRONMENT: ${ENVIRONMENT:-production}
       DEBUG: ${DEBUG:-false}
-    depends_on:
-      db:
-        condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
-    volumes:
-      - uploads_data:/app/static/uploads
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-volumes:
-  postgres_data:
-  uploads_data:
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8001/login')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
