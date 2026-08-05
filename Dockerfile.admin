@@ -3,6 +3,9 @@
 # Entry point: uvicorn admin.main:app
 # Port: 8001
 #
+# Build from the PROJECT ROOT:
+#   docker build -f Dockerfile.admin -t learn5by5-admin .
+#
 # NOTE: The admin app imports from app/ (app.config, app.services.api_client),
 #       so both directories are copied into the image.
 # ══════════════════════════════════════════════════════════════════════════════

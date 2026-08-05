@@ -46,7 +46,7 @@ services:
   admin:
     build:
       context: .
-      dockerfile: admin/Dockerfile
+      dockerfile: Dockerfile.admin
     image: learn5by5-admin
     container_name: l5b5-admin
     restart: unless-stopped
