@@ -16,7 +16,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.app
     image: learn5by5-app
     container_name: l5b5-app
     restart: unless-stopped
